@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đặt Lịch Khám - MedCare</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; padding: 30px; }
+        .booking-card { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; text-align: center; margin-bottom: 25px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .error { color: #dc3545; font-size: 13px; margin-top: 4px; display: block; }
+        .form-actions { display: flex; gap: 10px; }
+        .btn-submit, .btn-cancel { flex: 1; display: inline-block; text-align: center; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        .btn-submit { background: #28a745; color: white; border: none; }
+        .btn-submit:hover { background: #218838; }
+        .btn-submit:disabled { background: #94a99a; cursor: not-allowed; }
+        .btn-cancel { background: #6c757d; color: white; border: 1px solid #6c757d; box-sizing: border-box; }
+        .btn-cancel:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+
+<div class="booking-card">
+    <h2>📅 Đăng Ký Lịch Khám Bệnh</h2>
+
+    <form th:action="@{/appointments/book}" th:object="${appointmentDTO}" method="post">
+        <div class="form-group">
+            <label>Chọn Bác Sĩ:</label>
+            <select id="doctorId" th:field="*{doctorId}">
+                <option value="">-- Chọn Bác Sĩ --</option>
+                <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${doc.name} + ' (' + ${doc.specialty.name} + ')'"></option>
+            </select>
+            <span class="error" th:if="${#fields.hasErrors('doctorId')}" th:errors="*{doctorId}"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Ngày Khám:</label>
+            <input id="appointmentDate" type="date" th:field="*{appointmentDate}" />
+            <span class="error" th:if="${#fields.hasErrors('appointmentDate')}" th:errors="*{appointmentDate}"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Khung Giờ Khám (Time Slot):</label>
+            <select id="timeSlotId" th:field="*{timeSlotId}"
+                    th:attr="data-initial-slot=${selectedTimeSlotId}" disabled>
+                <option value="">-- Chọn bác sĩ và ngày khám trước --</option>
+            </select>
+            <span class="error" th:if="${#fields.hasErrors('timeSlotId')}" th:errors="*{timeSlotId}"></span>
+            <span id="availabilityMessage" role="status" aria-live="polite" style="font-size: 13px; color: #6c757d;"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Họ và Tên Bệnh Nhận:</label>
+            <input type="text" th:field="*{patientName}" placeholder="Nguyễn Văn A" />
+            <span class="error" th:if="${#fields.hasErrors('patientName')}" th:errors="*{patientName}"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Số Điện Thoại Liên Hệ:</label>
+            <input type="text" th:field="*{patientPhone}" placeholder="0912345678" />
+            <span class="error" th:if="${#fields.hasErrors('patientPhone')}" th:errors="*{patientPhone}"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Email (Không bắt buộc):</label>
+            <input type="email" th:field="*{patientEmail}" placeholder="example@gmail.com" />
+            <span class="error" th:if="${#fields.hasErrors('patientEmail')}" th:errors="*{patientEmail}"></span>
+        </div>
+
+        <div class="form-group">
+            <label>Lý Do Khám / Triệu Chứng:</label>
+            <textarea th:field="*{notes}" rows="3" placeholder="Đau đầu, ho nhẹ..."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-submit" disabled>Xác Nhận Đặt Lịch</button>
+            <a th:href="@{/doctors}" class="btn-cancel">Hủy</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const doctor = document.getElementById('doctorId');
+        const date = document.getElementById('appointmentDate');
+        const slot = document.getElementById('timeSlotId');
+        const message = document.getElementById('availabilityMessage');
+        const submit = document.querySelector('.btn-submit');
+        let initialSlot = slot.dataset.initialSlot || '';
+        let activeRequest = null;
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const minDate = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
+            .toISOString().slice(0, 10);
+        date.min = minDate;
+
+        async function refreshAvailableSlots() {
+            if (activeRequest) activeRequest.abort();
+            const requestController = new AbortController();
+            activeRequest = requestController;
+            slot.replaceChildren(new Option('-- Đang tải khung giờ --', ''));
+            slot.disabled = true;
+            submit.disabled = true;
+            message.textContent = '';
+            if (!doctor.value || !date.value) {
+                slot.replaceChildren(new Option('-- Chọn bác sĩ và ngày khám trước --', ''));
+                message.textContent = 'Chọn bác sĩ và ngày khám để xem ca còn trống.';
+                activeRequest = null;
+                return;
+            }
+            if (date.value <= minDate) {
+                slot.replaceChildren(new Option('-- Ngày khám phải từ ngày mai --', ''));
+                message.textContent = 'Vui lòng chọn ngày khám trong tương lai.';
+                activeRequest = null;
+                return;
+            }
+            const preferredSlot = initialSlot;
+            initialSlot = '';
+            try {
+                const url = new URL('/api/appointments/available-slots', window.location.origin);
+                url.searchParams.set('doctorId', doctor.value);
+                url.searchParams.set('date', date.value);
+                const response = await fetch(url, { signal: requestController.signal });
+                if (activeRequest !== requestController) return;
+                if (!response.ok) {
+                    throw new Error('Không thể tải khung giờ. Vui lòng thử lại.');
+                }
+                const slots = await response.json();
+                slot.replaceChildren(new Option('-- Chọn khung giờ --', ''));
+                slots.forEach(item => {
+                    const option = new Option(item.displayText, item.id);
+                    if (String(item.id) === preferredSlot) option.selected = true;
+                    slot.add(option);
+                });
+                message.textContent = slots.length ? `Còn ${slots.length} khung giờ trống.` : 'Ngày này đã hết khung giờ trống.';
+                if (slots.length === 0) {
+                    slot.replaceChildren(new Option('-- Hết khung giờ --', ''));
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return;
+                slot.replaceChildren(new Option('-- Không tải được khung giờ --', ''));
+                message.textContent = error.message;
+            } finally {
+                if (activeRequest !== requestController) return;
+                activeRequest = null;
+                slot.disabled = false;
+                submit.disabled = !slot.value;
+            }
+        }
+
+        function selectionChanged() {
+            initialSlot = '';
+            slot.value = '';
+            refreshAvailableSlots();
+        }
+
+        doctor.addEventListener('change', selectionChanged);
+        date.addEventListener('change', selectionChanged);
+        slot.addEventListener('change', () => { submit.disabled = !slot.value; });
+        if (doctor.value && date.value) refreshAvailableSlots();
+        else message.textContent = 'Chọn bác sĩ và ngày khám để xem ca còn trống.';
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tra Cứu Lịch Hẹn - MedCare</title>
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <!-- Nhúng thư viện jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 40px; margin: 0; }
+        .search-card { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; text-align: center; margin-bottom: 20px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+        .search-box input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-search { padding: 12px 20px; background: #0056b3; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-search:hover { background: #004085; }
+
+        /* Detail box */
+        #resultCard { display: none; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px; background: #fafafa; }
+        .info-row { margin-bottom: 10px; display: flex; justify-content: space-between; border-bottom: 1px dashed #ddd; padding-bottom: 8px; }
+        .info-label { font-weight: bold; color: #555; }
+        .status-badge { font-weight: bold; padding: 4px 10px; border-radius: 12px; font-size: 13px; }
+        .status-PENDING { background: #fff3cd; color: #856404; }
+        .status-CONFIRMED { background: #d4edda; color: #155724; }
+        .status-CANCELLED { background: #f8d7da; color: #721c24; }
+        .status-COMPLETED { background: #cce5ff; color: #004085; }
+
+        .btn-cancel { width: 100%; margin-top: 15px; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+        .btn-cancel:hover { background: #c82333; }
+        #errorMessage { color: #dc3545; font-weight: bold; text-align: center; margin-top: 15px; }
+
+        /* Custom Modal UI Styling */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-box {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            animation: modalFadeIn 0.25s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-icon { font-size: 40px; margin-bottom: 10px; }
+        .modal-title { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px; }
+        .modal-text { font-size: 15px; color: #666; margin-bottom: 20px; line-height: 1.4; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-modal { padding: 10px 22px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-modal-cancel { background: #e0e0e0; color: #333; }
+        .btn-modal-cancel:hover { background: #d0d0d0; }
+        .btn-modal-confirm { background: #dc3545; color: white; }
+        .btn-modal-confirm:hover { background: #bd2130; }
+        .btn-modal-primary { background: #0056b3; color: white; }
+        .btn-modal-primary:hover { background: #004085; }
+    </style>
+</head>
+<body>
+
+<div class="search-card">
+    <h2>🔍 Tra Cứu & Hủy Lịch Khám</h2>
+
+    <div class="search-box">
+        <input type="text" id="bookingCodeInput" placeholder="Nhập mã tra cứu" />
+        <input type="tel" id="patientPhoneInput" placeholder="Số điện thoại đặt lịch" />
+        <button type="button" class="btn-search" id="btnSearch">Tra Cứu</button>
+    </div>
+
+    <div id="errorMessage"></div>
+
+    <!-- Khối hiển thị kết quả bằng AJAX -->
+    <div id="resultCard">
+        <div class="info-row">
+            <span class="info-label">Mã Lịch Hẹn:</span>
+            <span id="resCode" style="font-weight: bold; color: #0056b3;"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Bệnh Nhân:</span>
+            <span id="resName"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Số Điện Thoại:</span>
+            <span id="resPhone"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Bác Sĩ Khám:</span>
+            <span id="resDoctor"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Ngày Khám:</span>
+            <span id="resDate"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Khung Giờ:</span>
+            <span id="resSlot"></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Trạng Thái:</span>
+            <span id="resStatus" class="status-badge"></span>
+        </div>
+
+        <button type="button" class="btn-cancel" id="btnCancel">Xác Nhận Hủy Lịch Khám</button>
+    </div>
+
+    <div style="text-align: center; margin-top: 25px;">
+        <a th:href="@{/doctors}" style="color: #0056b3; text-decoration: none; font-weight: bold;">← Quay lại trang chủ</a>
+    </div>
+</div>
+
+<!-- Modal Xác Nhận Hủy -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <div class="modal-icon">⚠️</div>
+        <div class="modal-title">Xác Nhận Hủy Lịch</div>
+        <div class="modal-text">Bạn có chắc chắn muốn hủy lịch hẹn khám này không? Hành động này không thể hoàn tác.</div>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-cancel" id="btnModalClose">Hủy Bỏ</button>
+            <button class="btn-modal btn-modal-confirm" id="btnModalConfirm">Đồng Ý Hủy</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thông Báo Kết Quả -->
+<div class="modal-overlay" id="alertModal">
+    <div class="modal-box">
+        <div class="modal-icon" id="alertIcon">✅</div>
+        <div class="modal-title" id="alertTitle">Thông Báo</div>
+        <div class="modal-text" id="alertText">Thao tác thành công!</div>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-primary" id="btnAlertOk">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        let currentCode = "";
+        let currentPhone = "";
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+
+        // Hàm hiển thị Alert Modal Tùy chỉnh
+        function showAlert(title, message, isSuccess = true) {
+            $('#alertTitle').text(title);
+            $('#alertText').text(message);
+            $('#alertIcon').text(isSuccess ? '✅' : '❌');
+            $('#alertModal').css('display', 'flex');
+        }
+
+        $('#btnAlertOk').click(function() {
+            $('#alertModal').hide();
+        });
+
+        // 1. Thao tác Tra cứu AJAX
+        $('#btnSearch').click(function() {
+            let code = $('#bookingCodeInput').val().trim();
+            let phone = $('#patientPhoneInput').val().trim();
+            $('#errorMessage').text('');
+            $('#resultCard').hide();
+
+            if (!code || !phone) {
+                $('#errorMessage').text('Vui lòng nhập mã đặt lịch và số điện thoại đã đăng ký!');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/appointments/search',
+                type: 'GET',
+                data: { bookingCode: code, patientPhone: phone },
+                success: function(data) {
+                    currentCode = data.bookingCode;
+                    currentPhone = phone;
+                    $('#resCode').text(data.bookingCode);
+                    $('#resName').text(data.patientName);
+                    $('#resPhone').text(data.patientPhone);
+                    $('#resDoctor').text(data.doctorName + ' (' + data.specialtyName + ')');
+                    $('#resDate').text(data.appointmentDate);
+                    $('#resSlot').text(data.timeSlot);
+
+                    let statusSpan = $('#resStatus');
+                    statusSpan.text(data.status);
+                    statusSpan.attr('class', 'status-badge status-' + data.status);
+
+                    if (data.status === 'CANCELLED' || data.status === 'COMPLETED') {
+                        $('#btnCancel').hide();
+                    } else {
+                        $('#btnCancel').show();
+                    }
+
+                    $('#resultCard').fadeIn();
+                },
+                error: function(xhr) {
+                    $('#errorMessage').text(xhr.responseText || 'Không tìm thấy thông tin lịch hẹn!');
+                }
+            });
+        });
+
+        // 2. Mở Modal xác nhận khi bấm nút "Xác Nhận Hủy Lịch Khám"
+        $('#btnCancel').click(function() {
+            $('#confirmModal').css('display', 'flex');
+        });
+
+        // Đóng modal xác nhận
+        $('#btnModalClose').click(function() {
+            $('#confirmModal').hide();
+        });
+
+        // 3. Bấm "Đồng Ý Hủy" trong Modal -> Gửi AJAX Hủy
+        $('#btnModalConfirm').click(function() {
+            $('#confirmModal').hide();
+
+            $.ajax({
+                url: '/api/appointments/cancel',
+                type: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                data: { bookingCode: currentCode, patientPhone: currentPhone },
+                success: function(response) {
+                    showAlert('Thành Công', response, true);
+                    // Tự động cập nhật lại giao diện sau khi hủy
+                    $('#btnSearch').click();
+                },
+                error: function(xhr) {
+                    showAlert('Thất Bại', xhr.responseText || 'Có lỗi xảy ra!', false);
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

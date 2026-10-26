@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${editing ? 'Cập nhật bác sĩ' : 'Thêm bác sĩ'} + ' | MedCare'">Hồ sơ bác sĩ</title>
+    <style>
+        body { margin: 0; padding: 28px; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
+        main { max-width: 760px; margin: auto; padding: 28px; border-radius: 12px; background: white; box-shadow: 0 5px 22px #18344a12; }
+        h1 { margin-top: 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .field { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; color: #4d6475; font-size: 13px; font-weight: 700; }
+        input, select, textarea { width: 100%; box-sizing: border-box; padding: 10px 11px; border: 1px solid #cbd9e0; border-radius: 7px; font: inherit; }
+        textarea { min-height: 110px; resize: vertical; }
+        .error { display: block; margin-top: 5px; color: #b4232c; font-size: 12px; }
+        .notice { padding: 12px; border-radius: 7px; background: #edf6f7; color: #315969; font-size: 13px; }
+        .check { display: flex; align-items: center; gap: 8px; }
+        .check input { width: auto; }
+        .buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .button { padding: 10px 15px; border: 0; border-radius: 7px; background: #087e8b; color: white; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+        .secondary { background: #eaf2f5; color: #254256; }
+        @media(max-width: 600px) { body { padding: 12px; } main { padding: 18px; } .grid { grid-template-columns: 1fr; gap: 0; } }
+    </style>
+</head>
+<body>
+<main>
+    <h1 th:text="${editing ? 'Cập nhật hồ sơ bác sĩ' : 'Thêm bác sĩ mới'}">Hồ sơ bác sĩ</h1>
+    <p class="notice">Tài khoản bác sĩ sử dụng quyền STAFF: được xem danh sách tất cả lịch hẹn nhưng không thể cập nhật trạng thái. Mật khẩu tối thiểu 12 ký tự; với tài khoản đã có, để trống để giữ mật khẩu hiện tại.</p>
+    <form th:action="@{/admin/catalog/doctors/save}" th:object="${doctorForm}" method="post">
+        <input type="hidden" th:field="*{id}">
+        <div class="grid">
+            <div class="field">
+                <label for="name">Họ tên bác sĩ</label>
+                <input id="name" th:field="*{name}" maxlength="100" required>
+                <span class="error" th:errors="*{name}"></span>
+            </div>
+            <div class="field">
+                <label for="degree">Học vị / chức danh</label>
+                <input id="degree" th:field="*{degree}" maxlength="100">
+                <span class="error" th:errors="*{degree}"></span>
+            </div>
+            <div class="field">
+                <label for="specialtyId">Chuyên khoa</label>
+                <select id="specialtyId" th:field="*{specialtyId}" required>
+                    <option value="">-- Chọn chuyên khoa --</option>
+                    <option th:each="specialty : ${specialties}" th:value="${specialty.id}"
+                            th:text="${specialty.name + (specialty.active ? '' : ' (đang ẩn)')}"></option>
+                </select>
+                <span class="error" th:errors="*{specialtyId}"></span>
+            </div>
+            <div class="field">
+                <label for="consultationFee">Phí khám (VNĐ)</label>
+                <input id="consultationFee" type="number" min="0" step="1000" th:field="*{consultationFee}">
+                <span class="error" th:errors="*{consultationFee}"></span>
+            </div>
+        </div>
+        <div class="field">
+            <label for="bio">Giới thiệu / kinh nghiệm</label>
+            <textarea id="bio" th:field="*{bio}"></textarea>
+        </div>
+        <div class="grid">
+            <div class="field">
+                <label for="username">Tên đăng nhập bác sĩ</label>
+                <input id="username" th:field="*{username}" maxlength="50" required autocomplete="username">
+                <span class="error" th:errors="*{username}"></span>
+            </div>
+            <div class="field">
+                <label for="password">Mật khẩu <span th:text="${hasDoctorAccount ? '(để trống nếu giữ nguyên)' : '(tối thiểu 12 ký tự)'}"></span></label>
+                <input id="password" type="password" th:field="*{password}" minlength="12"
+                       th:required="${!hasDoctorAccount}" autocomplete="new-password">
+                <span class="error" th:errors="*{password}"></span>
+            </div>
+        </div>
+        <label class="check">
+            <input type="checkbox" th:field="*{active}">
+            Hồ sơ đang hoạt động và được hiển thị cho bệnh nhân
+        </label>
+        <div class="buttons">
+            <button class="button" type="submit">Lưu hồ sơ</button>
+            <a class="button secondary" th:href="@{/admin/catalog/doctors}">Hủy</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

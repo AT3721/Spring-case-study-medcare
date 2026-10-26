@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông Tin Bác Sĩ - MedCare</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; padding: 30px; color: #333; }
+        .card { max-width: 700px; margin: 30px auto; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
+        h1 { color: #0056b3; }
+        .specialty { color: #0d47a1; font-weight: bold; }
+        .button { display: inline-block; margin: 12px 8px 0 0; padding: 10px 16px; border-radius: 5px; background: #0056b3; color: white; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+<main class="card">
+    <p class="specialty" th:text="${doctor.specialty.name}">Chuyên khoa</p>
+    <h1 th:text="${doctor.name}">Tên bác sĩ</h1>
+    <p th:text="${doctor.degree}">Học vị</p>
+    <p><strong>Phí khám: </strong><span th:text="${#numbers.formatDecimal(doctor.consultationFee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">300.000 VNĐ</span></p>
+    <p th:text="${doctor.bio}">Thông tin bác sĩ</p>
+    <a class="button" th:href="@{/appointments/book(doctorId=${doctor.id})}">Đặt lịch khám</a>
+    <a class="button" th:href="@{/doctors}">Danh sách bác sĩ</a>
+</main>
+</body>
+</html>
