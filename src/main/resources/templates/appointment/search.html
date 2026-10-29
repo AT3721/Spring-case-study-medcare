@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <title>Tra Cứu Lịch Hẹn - MedCare</title>
     <meta name="_csrf" th:content="${_csrf.token}">
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
     <!-- Nhúng thư viện jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 40px; margin: 0; }
-        .search-card { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 0; margin: 0; }
+        .search-card { width: min(600px, calc(100% - 32px)); margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h2 { color: #0056b3; text-align: center; margin-bottom: 20px; }
         .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
         .search-box input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
@@ -68,6 +69,7 @@
     </style>
 </head>
 <body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
 
 <div class="search-card">
     <h2>🔍 Tra Cứu & Hủy Lịch Khám</h2>
@@ -77,7 +79,6 @@
         <input type="tel" id="patientPhoneInput" placeholder="Số điện thoại đặt lịch" />
         <button type="button" class="btn-search" id="btnSearch">Tra Cứu</button>
     </div>
-
     <div id="errorMessage"></div>
 
     <!-- Khối hiển thị kết quả bằng AJAX -->
@@ -118,6 +119,7 @@
         <a th:href="@{/doctors}" style="color: #0056b3; text-decoration: none; font-weight: bold;">← Quay lại trang chủ</a>
     </div>
 </div>
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
 
 <!-- Modal Xác Nhận Hủy -->
 <div class="modal-overlay" id="confirmModal">
@@ -192,10 +194,17 @@
                     statusSpan.text(data.status);
                     statusSpan.attr('class', 'status-badge status-' + data.status);
 
-                    if (data.status === 'CANCELLED' || data.status === 'COMPLETED') {
+                    if (data.status === 'CANCELLED' || data.status === 'COMPLETED' || data.paymentStatus === 'PAID') {
                         $('#btnCancel').hide();
                     } else {
                         $('#btnCancel').show();
+                    }
+
+                    if (data.paymentStatus === 'PAID' && data.status !== 'CANCELLED' && data.status !== 'COMPLETED') {
+                        $('#paidNotice').remove();
+                        $('<div id="paidNotice" style="margin-top: 15px; padding: 10px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; color: #065f46; font-size: 13px; font-weight: 600; text-align: center;">🔒 Đơn đã thanh toán trực tuyến (Không thể hủy trên web)</div>').insertAfter('#resStatus');
+                    } else {
+                        $('#paidNotice').remove();
                     }
 
                     $('#resultCard').fadeIn();

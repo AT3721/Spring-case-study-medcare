@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:fragment="styles">
+        <style>
+            *, *::before, *::after { box-sizing: border-box; }
+            body { margin: 0 !important; padding: 0 !important; }
+            .admin-site-header { position: sticky; top: 0; z-index: 100; min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 28px; border-bottom: 1px solid #dce7ec; background: #fff; box-shadow: 0 3px 14px rgba(22,56,78,.04); }
+            .admin-brand { display: flex; align-items: center; gap: 11px; color: #075b68; text-decoration: none; }
+            .admin-brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: #087e8b; color: #fff; font-size: 22px; font-weight: 800; }
+            .admin-brand-name { font-size: 19px; font-weight: 800; }
+            .admin-brand-section { display: block; color: #61758a; font-size: 11px; font-weight: 600; }
+            .admin-account { display: flex; align-items: center; gap: 14px; color: #52677a; font-size: 13px; }
+            .admin-account-name { max-width: 220px; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+            .admin-logout { padding: 8px 12px; border: 1px solid #dce7ec; border-radius: 8px; background: #fff; color: #41596b; font: inherit; font-weight: 700; cursor: pointer; }
+            .admin-logout:hover { border-color: #b53b47; color: #a22e3b; }
+            .admin-shell { width: min(1600px, 100%); min-height: calc(100vh - 132px); display: grid; grid-template-columns: 238px minmax(0, 1fr); gap: 24px; margin: 0 auto; padding: 26px 28px 34px; }
+            .admin-sidebar { align-self: start; position: sticky; top: 92px; padding: 16px 12px; border: 1px solid #e0e9ed; border-radius: 13px; background: #fff; box-shadow: 0 5px 18px rgba(22,56,78,.04); }
+            .admin-sidebar-title { margin: 4px 10px 12px; color: #81919e; font-size: 11px; font-weight: 800; letter-spacing: .9px; text-transform: uppercase; }
+            .admin-sidebar-nav { display: grid; gap: 5px; }
+            .admin-sidebar-link { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 9px 11px; border-radius: 8px; color: #465d6e; font-size: 14px; font-weight: 650; text-decoration: none; }
+            .admin-sidebar-link:hover, .admin-sidebar-link:focus-visible { background: #eff8f8; color: #06636e; }
+            .admin-sidebar-icon { width: 22px; text-align: center; }
+            .admin-main { min-width: 0; }
+            .admin-main > main, .admin-main > .admin-container { width: 100%; max-width: none; margin: 0; }
+            .admin-main > main, .admin-main > .admin-container { min-width: 0; }
+            .admin-site-footer { padding: 18px 28px; border-top: 1px solid #dce7ec; background: #fff; color: #718392; font-size: 12px; }
+            .admin-site-footer-inner { width: min(1544px, 100%); display: flex; justify-content: space-between; gap: 14px; margin: 0 auto; }
+            @media (max-width: 900px) {
+                .admin-shell { grid-template-columns: 1fr; gap: 16px; padding: 18px 20px 26px; }
+                .admin-sidebar { position: static; padding: 10px; }
+                .admin-sidebar-title { margin: 2px 8px 8px; }
+                .admin-sidebar-nav { display: flex; overflow-x: auto; gap: 5px; }
+                .admin-sidebar-link { flex: 0 0 auto; }
+                .admin-main > main, .admin-main > .admin-container { padding: 20px; }
+            }
+            @media (max-width: 620px) {
+                .admin-site-header { min-height: 60px; padding: 0 14px; }
+                .admin-brand-mark { width: 32px; height: 32px; }
+                .admin-brand-name { font-size: 17px; }
+                .admin-brand-section { font-size: 10px; }
+                .admin-account { gap: 8px; font-size: 11px; }
+                .admin-account-name { max-width: 90px; }
+                .admin-logout { padding: 7px 9px; font-size: 11px; }
+                .admin-shell { padding: 14px 12px 22px; }
+                .admin-main > main, .admin-main > .admin-container { padding: 16px; }
+                .admin-site-footer { padding: 14px; }
+                .admin-site-footer-inner { flex-direction: column; }
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<header class="admin-site-header" th:fragment="header">
+    <a class="admin-brand" th:href="@{/admin/appointments}" aria-label="MedCare quản trị">
+        <span class="admin-brand-mark" aria-hidden="true">+</span>
+        <span><span class="admin-brand-name">MedCare</span><span class="admin-brand-section">Cổng quản trị</span></span>
+    </a>
+    <div class="admin-account">
+        <span class="admin-account-name" sec:authentication="name">Tài khoản</span>
+        <form th:action="@{/logout}" method="post">
+            <button class="admin-logout" type="submit">Đăng xuất</button>
+        </form>
+    </div>
+</header>
+<aside class="admin-sidebar" th:fragment="sidebar">
+    <p class="admin-sidebar-title">Không gian làm việc</p>
+    <nav class="admin-sidebar-nav" aria-label="Điều hướng quản trị">
+        <a class="admin-sidebar-link" th:href="@{/admin/appointments}">
+            <span class="admin-sidebar-icon" aria-hidden="true">▦</span><span>Lịch hẹn</span>
+        </a>
+        <a class="admin-sidebar-link" th:href="@{/admin/catalog/doctors}"
+           sec:authorize="hasAuthority('ROLE_ADMIN')">
+            <span class="admin-sidebar-icon" aria-hidden="true">♙</span><span>Quản lý bác sĩ</span>
+        </a>
+        <a class="admin-sidebar-link" th:href="@{/admin/catalog/specialties}"
+           sec:authorize="hasAuthority('ROLE_ADMIN')">
+            <span class="admin-sidebar-icon" aria-hidden="true">✚</span><span>Chuyên khoa</span>
+        </a>
+        <a class="admin-sidebar-link" th:href="@{/admin/catalog/schedules}"
+           sec:authorize="hasAuthority('ROLE_ADMIN')">
+            <span class="admin-sidebar-icon" aria-hidden="true">▦</span><span>Lịch làm việc</span>
+        </a>
+        <a class="admin-sidebar-link" th:href="@{/doctors}">
+            <span class="admin-sidebar-icon" aria-hidden="true">⌂</span><span>Xem trang bệnh nhân</span>
+        </a>
+    </nav>
+</aside>
+<footer class="admin-site-footer" th:fragment="footer">
+    <div class="admin-site-footer-inner">
+        <span>© MedCare · Hệ thống quản lý phòng khám</span>
+        <span>Thông tin bệnh nhân chỉ dành cho nhân viên được cấp quyền.</span>
+    </div>
+</footer>
+</body>
+</html>

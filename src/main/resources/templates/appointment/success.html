@@ -3,25 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>Đặt Lịch Thành Công - MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 50px; text-align: center; }
-        .success-card { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; padding: 0; text-align: center; }
+        .success-card { width: min(500px, calc(100% - 32px)); margin: 50px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .code { font-size: 32px; font-weight: bold; color: #28a745; letter-spacing: 2px; margin: 20px 0; background: #e8f5e9; padding: 10px; border-radius: 5px; }
         .btn-home { display: inline-block; padding: 10px 20px; background: #0056b3; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
 
 <div class="success-card">
     <h1 style="color: #28a745;">🎉 Đặt Lịch Thành Công!</h1>
-    <p>Cảm ơn quý khách đã tin tưởng dịch vụ MedCare. Mã tra cứu lịch hẹn của bạn là:</p>
+    <p>Cảm ơn quý khách đã tin tưởng dịch vụ MedCare. Mã đặt lịch của bạn là:</p>
 
     <div class="code" th:text="${bookingSuccessCode != null ? bookingSuccessCode : 'MC-...'}">MC-...</div>
 
-    <p style="font-size: 14px; color: #6c757d;">Vui lòng lưu lại mã này để tra cứu trạng thái lịch khám.</p>
+    <p style="font-size: 14px; color: #6c757d;">Lịch hẹn và kết quả khám sẽ được lưu trong tài khoản bệnh nhân của bạn.</p>
 
-    <a th:href="@{/doctors}" class="btn-home">Quay Lại Danh Sách Bác Sĩ</a>
+    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+        <a th:if="${bookingSuccessCode != null}" th:href="@{/payment/pay/{code}(code=${bookingSuccessCode})}"
+           style="display: inline-block; padding: 10px 20px; background: #087e8b; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            💳 Thanh toán ngay qua VNPay
+        </a>
+        <a th:href="@{/patient/appointments}" class="btn-home" style="margin-top: 0;">Xem lịch khám của tôi</a>
+    </div>
 </div>
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
 
 </body>
 </html>

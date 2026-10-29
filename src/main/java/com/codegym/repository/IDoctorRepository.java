@@ -28,6 +28,9 @@ public interface IDoctorRepository extends JpaRepository<Doctor, Long> {
     // Lọc danh sách Bác sĩ theo Chuyên khoa kèm Phân trang
     Page<Doctor> findBySpecialtyId(Long specialtyId, Pageable pageable);
 
+    @Query("select d from Doctor d where d.active = true and d.specialty.active = true and d.specialty.id = :specialtyId")
+    java.util.List<Doctor> findActiveBySpecialtyId(@Param("specialtyId") Long specialtyId);
+
     // Tìm kiếm Bác sĩ theo tên (không phân biệt hoa thường) kèm Phân trang
     Page<Doctor> findByNameContainingIgnoreCase(String name, Pageable pageable);
 

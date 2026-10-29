@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cổng Bác Sĩ - MedCare</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg-gray: #f8fafc;
+            --card-border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-gray);
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+        }
+        .portal-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .portal-brand {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .portal-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid var(--card-border);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .filters-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .filters-form {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .form-group select, .form-group input {
+            padding: 9px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-group select:focus, .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+        .btn-filter {
+            background: var(--primary);
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-filter:hover { background: var(--primary-dark); }
+        .btn-reset {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th {
+            background: #f8fafc;
+            padding: 14px 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            border-bottom: 1px solid var(--card-border);
+        }
+        td {
+            padding: 16px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--card-border);
+            vertical-align: middle;
+        }
+        tr:hover { background-color: #f8fafc; }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-confirmed { background: #e0f2fe; color: #0369a1; }
+        .badge-completed { background: #dcfce7; color: #166534; }
+        .badge-cancelled { background: #fee2e2; color: #991b1b; }
+        .badge-paid { background: #dcfce7; color: #166534; }
+        .badge-unpaid { background: #fef3c7; color: #92400e; }
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #0284c7;
+            color: white;
+            padding: 7px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-action:hover { background: #0369a1; }
+        .alert-success {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="portal-header">
+        <div class="portal-brand">
+            🩺 <span>MedCare - Cổng Bác Sĩ</span>
+        </div>
+        <div class="portal-user">
+            <span>Bác sĩ: <strong th:text="${doctor.name}">BS. Tùng</strong> (<span th:text="${doctor.specialty.name}">Tai Mũi Họng</span>)</span>
+            <form th:action="@{/logout}" method="post" style="margin: 0; display: inline;">
+                <button type="submit" class="btn-logout" style="border:none; cursor:pointer;">Đăng xuất</button>
+            </form>
+        </div>
+    </header>
+
+    <div class="container">
+        <div th:if="${successMsg}" class="alert-success" th:text="${successMsg}"></div>
+
+        <div class="welcome-card">
+            <div>
+                <h2 style="margin: 0 0 6px 0; color: #0f172a; font-size: 20px;">Lịch Hẹn Khám Bệnh Nhân</h2>
+                <p style="margin: 0; color: #64748b; font-size: 14px;">Quản lý bệnh nhân được xếp lịch khám, chẩn đoán kết quả và kê đơn thuốc.</p>
+            </div>
+            <div>
+                <span style="background: #f1f5f9; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #475569;">
+                    Hôm nay: <span th:text="${#temporals.format(today, 'dd/MM/yyyy')}">27/10/2026</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="filters-card">
+            <form th:action="@{/doctor/appointments}" method="get" class="filters-form">
+                <div class="form-group">
+                    <label for="date">Ngày khám:</label>
+                    <input type="date" id="date" name="date" th:value="${selectedDate}" />
+                </div>
+                <div class="form-group">
+                    <label for="status">Trạng thái:</label>
+                    <select id="status" name="status">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="PENDING" th:selected="${selectedStatus?.name() == 'PENDING'}">Chờ xác nhận</option>
+                        <option value="CONFIRMED" th:selected="${selectedStatus?.name() == 'CONFIRMED'}">Đã xác nhận</option>
+                        <option value="COMPLETED" th:selected="${selectedStatus?.name() == 'COMPLETED'}">Đã hoàn thành</option>
+                        <option value="CANCELLED" th:selected="${selectedStatus?.name() == 'CANCELLED'}">Đã hủy</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-filter">Lọc Danh Sách</button>
+                <a th:href="@{/doctor/appointments}" class="btn-reset">Đặt lại</a>
+            </form>
+        </div>
+
+        <div class="table-card">
+            <div th:if="${#lists.isEmpty(appointments)}" style="padding: 48px 24px; text-align: center; color: #94a3b8;">
+                <p style="font-size: 16px; margin: 0;">Hiện không có lịch hẹn khám nào phù hợp với bộ lọc.</p>
+            </div>
+
+            <table th:unless="${#lists.isEmpty(appointments)}">
+                <thead>
+                    <tr>
+                        <th>MÃ ĐẶT LỊCH</th>
+                        <th>BỆNH NHÂN</th>
+                        <th>SỐ ĐIỆN THOẠI</th>
+                        <th>NGÀY KHÁM</th>
+                        <th>GIỜ KHÁM</th>
+                        <th>THANH TOÁN</th>
+                        <th>TRẠNG THÁI</th>
+                        <th>THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="app : ${appointments}">
+                        <td><strong style="color: #0284c7;" th:text="${app.bookingCode}">MC-123456</strong></td>
+                        <td>
+                            <strong th:text="${app.patientName}">Nguyễn Văn A</strong>
+                            <div th:if="${app.patientEmail}" style="font-size: 12px; color: #64748b;" th:text="${app.patientEmail}"></div>
+                        </td>
+                        <td th:text="${app.patientPhone}">0912345678</td>
+                        <td><strong th:text="${#temporals.format(app.appointmentDate, 'dd/MM/yyyy')}">27/10/2026</strong></td>
+                        <td>
+                            <span th:text="${#temporals.format(app.timeSlot.startTime, 'HH:mm')}">08:00</span> -
+                            <span th:text="${#temporals.format(app.timeSlot.endTime, 'HH:mm')}">08:30</span>
+                        </td>
+                        <td>
+                            <span th:class="'badge ' + (${app.paymentStatus.name() == 'PAID'} ? 'badge-paid' : 'badge-unpaid')"
+                                  th:text="${app.paymentStatus.name() == 'PAID' ? 'Đã TT' : 'Chưa TT'}">
+                            </span>
+                        </td>
+                        <td>
+                            <span th:if="${app.status.name() == 'PENDING'}" class="badge badge-pending">Chờ khám</span>
+                            <span th:if="${app.status.name() == 'CONFIRMED'}" class="badge badge-confirmed">Đã xác nhận</span>
+                            <span th:if="${app.status.name() == 'COMPLETED'}" class="badge badge-completed">Đã khám</span>
+                            <span th:if="${app.status.name() == 'CANCELLED'}" class="badge badge-cancelled">Đã hủy</span>
+                        </td>
+                        <td>
+                            <a th:href="@{'/doctor/appointments/' + ${app.id}}" class="btn-action">
+                                📋 Khám & Kê đơn
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>

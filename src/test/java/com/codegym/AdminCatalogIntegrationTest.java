@@ -2,8 +2,11 @@ package com.codegym;
 
 import com.codegym.model.RoleName;
 import com.codegym.model.Doctor;
+import com.codegym.model.DoctorDateSchedule;
+import com.codegym.model.DoctorWorkShift;
 import com.codegym.repository.IDoctorRepository;
 import com.codegym.repository.IDoctorScheduleRepository;
+import com.codegym.repository.IDoctorDateScheduleRepository;
 import com.codegym.repository.IRoleRepository;
 import com.codegym.repository.IUserRepository;
 import com.codegym.repository.ISpecialtyRepository;
@@ -39,6 +42,7 @@ class AdminCatalogIntegrationTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private IDoctorRepository doctorRepository;
     @Autowired private IDoctorScheduleRepository doctorScheduleRepository;
+    @Autowired private IDoctorDateScheduleRepository doctorDateScheduleRepository;
     @Autowired private ISpecialtyRepository specialtyRepository;
     @Autowired private ITimeSlotRepository timeSlotRepository;
     @Autowired private IRoleRepository roleRepository;
@@ -69,20 +73,23 @@ class AdminCatalogIntegrationTest {
                         .param("degree", "MD")
                         .param("consultationFee", "250000")
                         .param("bio", "Created by admin catalog test")
+                        .param("imageUrl", "/images/doctors/male-doctor-1.jpg")
                         .param("specialtyId", "1")
                         .param("active", "true")
                         .param("username", "doctor-" + suffix)
                         .param("password", "StrongTestPassword123"))
                 .andExpect(status().is3xxRedirection());
 
-        assertTrue(doctorRepository.findAll().stream().anyMatch(doctor -> doctor.getName().equals("New Doctor " + suffix)));
-        assertTrue(roleRepository.findByName(RoleName.ROLE_STAFF).isPresent());
+        assertTrue(doctorRepository.findAll().stream().anyMatch(doctor ->
+                doctor.getName().equals("New Doctor " + suffix)
+                        && "/images/doctors/male-doctor-1.jpg".equals(doctor.getImageUrl())));
+        assertTrue(roleRepository.findByName(RoleName.ROLE_DOCTOR).isPresent());
         assertTrue(userRepository.findByUsername("doctor-" + suffix)
                 .map(user -> user.getDoctor() != null && user.getRoles().stream()
-                        .anyMatch(role -> role.getName() == RoleName.ROLE_STAFF))
+                        .anyMatch(role -> role.getName() == RoleName.ROLE_DOCTOR))
                 .orElse(false));
         assertTrue(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM roles WHERE name = 'ROLE_DOCTOR'", Integer.class) == 0);
+                "SELECT COUNT(*) FROM roles WHERE name = 'ROLE_DOCTOR'", Integer.class) > 0);
     }
 
     @Test
@@ -99,21 +106,57 @@ class AdminCatalogIntegrationTest {
                 .andExpect(content().string(containsString("Chủ Nhật")))
                 .andExpect(content().string(containsString("Ca sáng")))
                 .andExpect(content().string(containsString("Ca chiều")))
-                .andExpect(content().string(containsString("Chọn tất cả")))
-                .andExpect(content().string(containsString("Bỏ chọn")));
+                .andExpect(content().string(containsString("Chọn cả ngày")))
+                .andExpect(content().string(containsString("Nghỉ ngày này")))
+                .andExpect(content().string(containsString("08:00–12:00")))
+                .andExpect(content().string(containsString("13:00–17:00")));
 
         mockMvc.perform(post("/admin/catalog/doctors/{id}/schedule", doctor.getId())
                         .with(csrf())
-                        .param("slotSelections", "MONDAY-1", "WEDNESDAY-2"))
+                        .param("shiftSelections", "MONDAY-MORNING", "WEDNESDAY-AFTERNOON"))
                 .andExpect(status().is3xxRedirection());
 
         var schedules = doctorScheduleRepository.findByDoctorId(doctor.getId());
-        assertEquals(2, schedules.size());
-        assertTrue(schedules.stream().anyMatch(schedule -> schedule.getDayOfWeek() == DayOfWeek.MONDAY));
-        assertTrue(schedules.stream().anyMatch(schedule -> schedule.getDayOfWeek() == DayOfWeek.WEDNESDAY));
+        var activeSlots = timeSlotRepository.findByActiveTrueOrderByStartTimeAsc();
+        long morningSlotCount = activeSlots.stream()
+                .filter(slot -> slot.getStartTime().getHour() < 12).count();
+        long afternoonSlotCount = activeSlots.size() - morningSlotCount;
+        var morningSlotIds = activeSlots.stream()
+                .filter(slot -> slot.getStartTime().getHour() < 12)
+                .map(slot -> slot.getId())
+                .collect(java.util.stream.Collectors.toSet());
+        var afternoonSlotIds = activeSlots.stream()
+                .filter(slot -> slot.getStartTime().getHour() >= 12)
+                .map(slot -> slot.getId())
+                .collect(java.util.stream.Collectors.toSet());
+        assertEquals(morningSlotCount + afternoonSlotCount, schedules.size());
+        assertEquals(morningSlotIds, schedules.stream()
+                .filter(schedule -> schedule.getDayOfWeek() == DayOfWeek.MONDAY)
+                .map(schedule -> schedule.getTimeSlot().getId())
+                .collect(java.util.stream.Collectors.toSet()));
+        assertEquals(afternoonSlotIds, schedules.stream()
+                .filter(schedule -> schedule.getDayOfWeek() == DayOfWeek.WEDNESDAY)
+                .map(schedule -> schedule.getTimeSlot().getId())
+                .collect(java.util.stream.Collectors.toSet()));
         mockMvc.perform(get("/admin/catalog/doctors/{id}/schedule", doctor.getId()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("value=\"MONDAY-1\" checked=\"checked\"")));
+                .andExpect(content().string(containsString("value=\"MONDAY-MORNING\" checked=\"checked\"")))
+                .andExpect(content().string(containsString("value=\"WEDNESDAY-AFTERNOON\" checked=\"checked\"")));
+        LocalDate scheduledDate = LocalDate.of(2026, 10, 27);
+        doctorDateScheduleRepository.saveAll(java.util.List.of(
+                new DoctorDateSchedule(doctor, scheduledDate, DoctorWorkShift.MORNING),
+                new DoctorDateSchedule(doctor, scheduledDate, DoctorWorkShift.AFTERNOON)));
+        assertEquals(java.util.Set.of(DoctorWorkShift.MORNING, DoctorWorkShift.AFTERNOON),
+                new java.util.HashSet<>(doctorDateScheduleRepository.findShiftsByDoctorAndDate(
+                        doctor.getId(), scheduledDate)));
+        mockMvc.perform(get("/admin/catalog/schedules")
+                        .param("month", "2026-10")
+                        .param("specialtyId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(doctor.getName())))
+                .andExpect(content().string(containsString("schedule-table")))
+                .andExpect(content().string(containsString("Ca sáng")))
+                .andExpect(content().string(containsString("Ca chiều")));
 
         LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
         Long firstSlotId = timeSlotRepository.findByActiveTrueOrderByStartTimeAsc().get(0).getId();
@@ -121,7 +164,7 @@ class AdminCatalogIntegrationTest {
                         .param("doctorId", doctor.getId().toString())
                         .param("date", nextMonday.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$", hasSize((int) morningSlotCount)))
                 .andExpect(jsonPath("$[0].id").value(firstSlotId.intValue()));
     }
 }

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lịch khám của tôi | MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
+    <style>
+        body { background: #f5f9fb; font-family: "Segoe UI", Arial, sans-serif; color: #17324d; }
+        .patient-main { width: min(100% - 32px, 1000px); margin: 34px auto; }
+        .page-heading { margin-bottom: 22px; }
+        .page-heading h1 { margin: 0; font-size: clamp(25px, 4vw, 34px); }
+        .page-heading p { color: #61758a; }
+        .appointment-card { margin: 16px 0; padding: 22px; border: 1px solid #dce7ec; border-radius: 14px; background: #fff; box-shadow: 0 5px 18px rgba(22,56,78,.04); }
+        .appointment-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .appointment-top h2 { margin: 0; font-size: 19px; }
+        .booking-code { display: inline-block; margin-top: 8px; color: #06636e; font-weight: 800; letter-spacing: .5px; }
+        .appointment-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+        .detail-label { display: block; color: #61758a; font-size: 12px; }
+        .detail-value { font-weight: 650; }
+        .status { padding: 5px 10px; border-radius: 999px; background: #eaf7f7; color: #06636e; font-size: 12px; font-weight: 750; }
+        .result { margin-top: 16px; padding: 16px; border-left: 4px solid #087e8b; border-radius: 8px; background: #f2f9f9; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .result h3 { margin: 0 0 8px; font-size: 15px; }
+        .empty { padding: 34px; border: 1px dashed #b9cbd3; border-radius: 14px; background: #fff; text-align: center; }
+        .empty p { color: #61758a; }
+        .button { display: inline-flex; margin-top: 10px; padding: 10px 14px; border-radius: 8px; background: #087e8b; color: white; font-weight: 700; text-decoration: none; }
+        .appointment-message { margin: 16px 0; padding: 12px 15px; border-radius: 8px; background: #eaf7f7; color: #075b68; }
+        .appointment-actions { display: flex; gap: 9px; margin-top: 15px; }
+        .action-link, .action-button { padding: 8px 12px; border: 1px solid #087e8b; border-radius: 7px; background: #fff; color: #06636e; font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+        .action-button { border-color: #b42318; color: #b42318; }
+        .appointment-actions form { margin: 0; }
+        .cancel-dialog { width: min(440px, calc(100% - 40px)); padding: 0; border: 0; border-radius: 14px; color: #17324d; box-shadow: 0 20px 60px rgba(18, 42, 60, .25); }
+        .cancel-dialog::backdrop { background: rgba(15, 35, 50, .55); backdrop-filter: blur(2px); }
+        .dialog-content { padding: 26px; text-align: center; }
+        .dialog-icon { display: grid; width: 48px; height: 48px; margin: 0 auto 14px; place-items: center; border-radius: 50%; background: #fff1f0; color: #b42318; font-size: 24px; }
+        .dialog-content h2 { margin: 0 0 9px; font-size: 20px; }
+        .dialog-content p { margin: 0; color: #61758a; line-height: 1.55; }
+        .dialog-actions { display: flex; justify-content: center; gap: 10px; margin-top: 22px; }
+        .dialog-button { min-width: 112px; padding: 10px 14px; border: 1px solid #d3dfe4; border-radius: 7px; background: #fff; color: #315469; font: inherit; font-weight: 700; cursor: pointer; }
+        .dialog-button.confirm { border-color: #b42318; background: #b42318; color: #fff; }
+        .dialog-button.confirm:hover { background: #941d16; }
+        @media (max-width: 620px) { .appointment-details { grid-template-columns: 1fr 1fr; } .appointment-card { padding: 17px; } }
+    </style>
+</head>
+<body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
+<main class="patient-main">
+    <div class="page-heading">
+        <h1>Lịch khám của tôi</h1>
+        <p th:text="'Xin chào ' + ${patientName} + '. Mã đặt lịch và kết quả khám được lưu tại đây.'">Thông tin lịch khám của bạn.</p>
+    </div>
+    <div class="appointment-message" th:if="${appointmentMessage}" th:text="${appointmentMessage}" role="status"></div>
+    <div class="empty" th:if="${appointments.isEmpty()}">
+        <h2>Bạn chưa có lịch khám gắn với tài khoản</h2>
+        <p>Các lịch đặt khi bạn đăng nhập tài khoản bệnh nhân sẽ tự động được lưu tại đây.</p>
+        <a class="button" th:href="@{/appointments/book}">Đặt lịch khám</a>
+    </div>
+    <article class="appointment-card" th:each="appointment : ${appointments}">
+        <div class="appointment-top">
+            <div>
+                <h2 th:text="${appointment.doctor.name}">Tên bác sĩ</h2>
+                <span class="booking-code" th:text="'Mã đặt lịch: ' + ${appointment.bookingCode}">MC-...</span>
+            </div>
+            <span class="status" th:text="${appointment.status}">PENDING</span>
+        </div>
+        <div class="appointment-details">
+            <div><span class="detail-label">Chuyên khoa</span><span class="detail-value" th:text="${appointment.doctor.specialty.name}">Chuyên khoa</span></div>
+            <div><span class="detail-label">Ngày khám</span><span class="detail-value" th:text="${#temporals.format(appointment.appointmentDate, 'dd/MM/yyyy')}">01/01/2027</span></div>
+            <div><span class="detail-label">Khung giờ</span><span class="detail-value" th:text="${appointment.timeSlot.displayText}">08:00</span></div>
+            <div>
+                <span class="detail-label">Phí khám</span>
+                <span class="detail-value"
+                      th:text="${appointment.paymentAmount != null ? #numbers.formatDecimal(appointment.paymentAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : (appointment.doctor.consultationFee != null ? #numbers.formatDecimal(appointment.doctor.consultationFee, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '300.000 VNĐ')}">300.000 VNĐ</span>
+            </div>
+            <div>
+                <span class="detail-label">Thanh toán</span>
+                <span class="detail-value">
+                    <span th:if="${appointment.paymentStatus != null and appointment.paymentStatus.name() == 'PAID'}" style="color: #16a34a; font-weight: 700;">
+                        ✓ Đã thanh toán (VNPay)
+                    </span>
+                    <span th:if="${appointment.paymentStatus == null or appointment.paymentStatus.name() != 'PAID'}" style="color: #d97706; font-weight: 700;">
+                        Chưa thanh toán
+                    </span>
+                </span>
+            </div>
+        </div>
+        <div class="appointment-actions"
+             th:if="${((appointment.paymentStatus == null or appointment.paymentStatus.name() != 'PAID') and appointment.status.name() != 'CANCELLED' and appointment.status.name() != 'COMPLETED') or (appointment.paymentStatus != null and appointment.paymentStatus.name() == 'PAID')}">
+            <a class="action-link" style="border-color: #087e8b; background: #087e8b; color: white;"
+               th:if="${(appointment.paymentStatus == null or appointment.paymentStatus.name() != 'PAID') and appointment.status.name() != 'CANCELLED' and appointment.status.name() != 'COMPLETED'}"
+               th:href="@{/payment/pay/{code}(code=${appointment.bookingCode})}">💳 Thanh toán VNPay</a>
+            <a class="action-link"
+               th:if="${(appointment.paymentStatus == null or appointment.paymentStatus.name() != 'PAID') and appointment.appointmentDate.isAfter(T(java.time.LocalDate).now()) and (appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED')}"
+               th:href="@{/patient/appointments/{id}/edit(id=${appointment.id})}">Chỉnh sửa</a>
+            <form th:if="${(appointment.paymentStatus == null or appointment.paymentStatus.name() != 'PAID') and appointment.appointmentDate.isAfter(T(java.time.LocalDate).now()) and (appointment.status.name() == 'PENDING' or appointment.status.name() == 'CONFIRMED')}"
+                  th:action="@{/patient/appointments/{id}/cancel(id=${appointment.id})}" method="post">
+                <button class="action-button cancel-trigger" type="button">Hủy lịch</button>
+            </form>
+            <span th:if="${appointment.paymentStatus != null and appointment.paymentStatus.name() == 'PAID' and appointment.status.name() != 'COMPLETED' and appointment.status.name() != 'CANCELLED'}"
+                  style="font-size: 13px; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 6px 12px; border-radius: 6px; font-weight: 600;">
+                🔒 Đơn đã thanh toán trực tuyến (Không thể tự hủy trên web)
+            </span>
+        </div>
+        <div class="result" th:if="${appointment.status.name() == 'COMPLETED' and appointment.clinicalResult != null and !appointment.clinicalResult.isBlank()}">
+            <h3 style="color: #0369a1; display: flex; align-items: center; gap: 8px;">📋 Phiếu Khám Bệnh & Kết Luận Của Bác Sĩ</h3>
+            <div style="line-height: 1.6; font-size: 14px; color: #1e293b;" th:text="${appointment.clinicalResult}">Kết quả khám sẽ hiển thị tại đây.</div>
+        </div>
+        <div class="result" th:if="${appointment.status.name() == 'COMPLETED' and (appointment.clinicalResult == null or appointment.clinicalResult.isBlank())}">
+            <h3 style="color: #0369a1;">📋 Phiếu Khám Bệnh</h3>
+            <div style="color: #64748b; font-style: italic;">Bác sĩ đang hoàn tất phiếu khám và chỉ định thuốc cho buổi khám này.</div>
+        </div>
+
+        <!-- Đơn thuốc của buổi khám -->
+        <div class="result" style="margin-top: 16px; background: #f0fdf4; border-color: #86efac;"
+             th:if="${prescriptionsMap != null and prescriptionsMap.get(appointment.id) != null and !#lists.isEmpty(prescriptionsMap.get(appointment.id))}">
+            <h3 style="color: #166534;">💊 Đơn thuốc đã kê</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+                <thead>
+                    <tr style="background: #dcfce7; color: #166534; text-align: left;">
+                        <th style="padding: 8px 10px; border-bottom: 1px solid #bbf7d0;">Tên thuốc</th>
+                        <th style="padding: 8px 10px; border-bottom: 1px solid #bbf7d0;">Hàm lượng</th>
+                        <th style="padding: 8px 10px; border-bottom: 1px solid #bbf7d0;">Số lượng</th>
+                        <th style="padding: 8px 10px; border-bottom: 1px solid #bbf7d0;">Cách dùng</th>
+                        <th style="padding: 8px 10px; border-bottom: 1px solid #bbf7d0;">Lời dặn / Tái khám</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="rx : ${prescriptionsMap.get(appointment.id)}" style="border-bottom: 1px solid #dcfce7;">
+                        <td style="padding: 8px 10px;"><strong th:text="${rx.medicineName}">Thuốc</strong></td>
+                        <td style="padding: 8px 10px;" th:text="${rx.dosage}">500mg</td>
+                        <td style="padding: 8px 10px;"><span style="background: #bbf7d0; color: #14532d; padding: 2px 6px; border-radius: 4px; font-weight: 600;" th:text="${rx.quantity}">10 viên</span></td>
+                        <td style="padding: 8px 10px;" th:text="${rx.usageInstructions ?: '-'}">Ngày uống 2 lần</td>
+                        <td style="padding: 8px 10px;">
+                            <span th:text="${rx.doctorAdvice ?: '-'}">Lời dặn</span>
+                            <div th:if="${rx.followUpDate}" style="color: #0369a1; font-weight: 600; font-size: 12px; margin-top: 2px;">
+                                📅 Ngày tái khám: <span th:text="${#temporals.format(rx.followUpDate, 'dd/MM/yyyy')}"></span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+</main>
+<dialog class="cancel-dialog" id="cancelDialog" aria-labelledby="cancelDialogTitle" aria-describedby="cancelDialogDescription">
+    <div class="dialog-content">
+        <div class="dialog-icon" aria-hidden="true">!</div>
+        <h2 id="cancelDialogTitle">Xác nhận hủy lịch?</h2>
+        <p id="cancelDialogDescription">Lịch hẹn sẽ chuyển sang trạng thái đã hủy và vẫn được lưu trong lịch sử của bạn.</p>
+        <div class="dialog-actions">
+            <button class="dialog-button" id="dismissCancel" type="button">Không, quay lại</button>
+            <button class="dialog-button confirm" id="confirmCancel" type="button">Xác nhận hủy</button>
+        </div>
+    </div>
+</dialog>
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dialog = document.getElementById('cancelDialog');
+        const dismissButton = document.getElementById('dismissCancel');
+        const confirmButton = document.getElementById('confirmCancel');
+        let pendingForm = null;
+
+        document.querySelectorAll('.cancel-trigger').forEach(button => {
+            button.addEventListener('click', () => {
+                pendingForm = button.closest('form');
+                dialog.showModal();
+            });
+        });
+        dismissButton.addEventListener('click', () => {
+            pendingForm = null;
+            dialog.close();
+        });
+        confirmButton.addEventListener('click', () => {
+            const form = pendingForm;
+            pendingForm = null;
+            dialog.close();
+            if (form) form.requestSubmit();
+        });
+        dialog.addEventListener('close', () => { pendingForm = null; });
+        dialog.addEventListener('click', event => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
+</script>
+</body>
+</html>

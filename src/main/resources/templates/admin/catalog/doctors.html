@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quản lý bác sĩ | MedCare</title>
     <style>
-        body { margin: 0; padding: 28px; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
+        body { margin: 0; padding: 0; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
         main { max-width: 1100px; margin: auto; padding: 26px; border-radius: 12px; background: #fff; box-shadow: 0 5px 22px #18344a12; }
         .head, .actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         h1 { margin: 0 0 20px; }
@@ -23,8 +23,13 @@
         .actions form { margin: 0; }
         @media(max-width: 700px) { body { padding: 12px; } main { padding: 16px; overflow-x: auto; } table { min-width: 720px; } }
     </style>
+    <th:block th:replace="~{fragments/admin-layout :: styles}"></th:block>
 </head>
 <body>
+<header th:replace="~{fragments/admin-layout :: header}"></header>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/admin-layout :: sidebar}"></aside>
+    <div class="admin-main">
 <main>
     <div class="head">
         <h1>Quản lý bác sĩ</h1>
@@ -61,5 +66,8 @@
         </tbody>
     </table>
 </main>
+</div>
+</div>
+<footer th:replace="~{fragments/admin-layout :: footer}"></footer>
 </body>
 </html>

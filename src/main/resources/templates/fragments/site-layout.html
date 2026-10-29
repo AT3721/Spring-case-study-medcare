@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <th:block th:fragment="styles">
+        <style>
+            * { box-sizing: border-box; }
+            body { min-height: 100vh; margin: 0; display: flex; flex-direction: column; }
+            .site-header { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #dce7ec; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
+            .site-header-inner, .site-footer-inner { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+            .site-header-inner { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+            .site-brand { display: inline-flex; align-items: center; gap: 10px; color: #06636e; font-size: 22px; font-weight: 800; text-decoration: none; letter-spacing: -.5px; }
+            .site-brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #087e8b; color: white; font-size: 22px; }
+            .site-nav { display: flex; align-items: center; gap: 22px; }
+            .site-nav a { color: #61758a; font-size: 14px; font-weight: 650; text-decoration: none; }
+            .site-nav a:hover, .site-nav a:focus-visible { color: #06636e; }
+            .site-nav .site-login-link { padding: 9px 14px; border: 1px solid #dce7ec; border-radius: 9px; }
+            .site-nav button.site-login-link { background: #fff; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; }
+            .site-nav form { margin: 0; }
+            .site-footer { margin-top: auto; padding: 22px 0; border-top: 1px solid #dce7ec; background: #fff; color: #61758a; font-size: 13px; }
+            .site-footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+            .site-footer-links { display: flex; flex-wrap: wrap; gap: 16px; }
+            .site-footer-links a { color: #61758a; text-decoration: none; }
+            .site-footer-links a:hover { color: #06636e; }
+            @media (max-width: 620px) {
+                .site-header-inner, .site-footer-inner { width: min(100% - 28px, 1120px); }
+                .site-header-inner { min-height: 62px; gap: 8px; }
+                .site-nav { justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+                .site-nav a { font-size: 11px; }
+                .site-nav .site-login-link { padding: 7px 9px; }
+                .site-nav button.site-login-link { font-size: 11px; }
+                .site-brand { gap: 7px; font-size: 17px; }
+                .site-brand-mark { width: 30px; height: 30px; }
+                .site-footer-inner { align-items: flex-start; flex-direction: column; }
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+<header class="site-header" th:fragment="header">
+    <div class="site-header-inner">
+        <a class="site-brand" th:href="@{/doctors}" aria-label="MedCare - Trang chủ">
+            <span class="site-brand-mark" aria-hidden="true">+</span>
+            <span>MedCare</span>
+        </a>
+        <nav class="site-nav" aria-label="Điều hướng chính">
+            <a th:href="@{/doctors#doctor-results}">Bác sĩ</a>
+            <a th:href="@{/appointments/book}">Đặt lịch</a>
+            <a class="site-login-link" th:href="@{/login}" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+            <a class="site-login-link" th:href="@{/patient/appointments}"
+               sec:authorize="hasAuthority('ROLE_PATIENT')">Lịch của tôi</a>
+            <a class="site-login-link" th:href="@{/doctor/appointments}"
+               sec:authorize="hasAuthority('ROLE_DOCTOR')">Cổng Bác Sĩ</a>
+            <a class="site-login-link" th:href="@{/admin/appointments}"
+               sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')">Quản trị</a>
+            <form th:action="@{/logout}" method="post" sec:authorize="isAuthenticated()">
+                <button class="site-login-link" type="submit">Đăng xuất</button>
+            </form>
+        </nav>
+    </div>
+</header>
+<footer class="site-footer" th:fragment="footer">
+    <div class="site-footer-inner">
+        <span>© MedCare · Đồng hành cùng sức khỏe gia đình bạn.</span>
+        <nav class="site-footer-links" aria-label="Liên kết cuối trang">
+            <a th:href="@{/doctors}">Danh sách bác sĩ</a>
+            <a th:href="@{/appointments/book}">Đặt lịch khám</a>
+        </nav>
+    </div>
+</footer>
+</body>
+</html>

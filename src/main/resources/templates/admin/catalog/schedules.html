@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lịch làm việc bác sĩ | MedCare</title>
+    <style>
+        body { margin: 0; padding: 0; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
+        main { padding: 26px; border-radius: 12px; background: #fff; box-shadow: 0 5px 22px #18344a12; }
+        h1 { margin: 0 0 8px; color: #173b55; }
+        .intro { margin: 0 0 18px; color: #61758a; }
+        .manage-link, .month-nav a { padding: 8px 12px; border: 1px solid #dce7ec; border-radius: 7px; color: #315469; text-decoration: none; background: #fff; font-size: 13px; font-weight: 700; }
+        .manage-link { display: inline-block; }
+        .schedule-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 14px; }
+        .month-nav { display: flex; gap: 8px; }
+        .toolbar-title { margin: 0; color: #173b55; font-size: 20px; }
+        .filters { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; padding: 14px; border: 1px solid #dfe9ed; border-radius: 10px; background: #f7fafb; }
+        .filters label { display: grid; gap: 6px; color: #526b7a; font-size: 13px; font-weight: 700; }
+        .filters select { min-width: 260px; padding: 9px 12px; border: 1px solid #cbd9df; border-radius: 7px; background: #fff; color: #23384a; font: inherit; }
+        .schedule-scroll { overflow-x: auto; }
+        .schedule-table { width: 100%; min-width: 620px; border-collapse: separate; border-spacing: 0; border: 1px solid #e2eaee; border-radius: 8px; overflow: hidden; }
+        .schedule-table th, .schedule-table td { padding: 11px 13px; border-right: 1px solid #e8eef1; border-bottom: 1px solid #e8eef1; text-align: left; vertical-align: top; }
+        .schedule-table th { background: #f3f7f9; color: #526b7a; font-size: 13px; }
+        .schedule-table th:first-child, .schedule-table td:first-child { width: 145px; }
+        .schedule-table th:last-child, .schedule-table td:last-child { border-right: 0; }
+        .schedule-table tbody tr:last-child td { border-bottom: 0; }
+        .schedule-table td { min-height: 42px; }
+        .day-name { color: #173b55; font-weight: 750; }
+        .day-date { display: block; margin-top: 3px; color: #718392; font-size: 12px; }
+        .shift-heading { display: flex; align-items: center; gap: 8px; }
+        .shift-heading::before { width: 9px; height: 9px; border-radius: 50%; background: #12806a; content: ""; }
+        .shift-heading.afternoon::before { background: #506db1; }
+        .doctor-name { display: inline-block; margin: 2px 5px 2px 0; padding: 5px 8px; border-radius: 5px; background: #eff8f5; color: #246447; font-size: 13px; }
+        .doctor-name.afternoon { background: #eef2fb; color: #405d9a; }
+        .empty { padding: 18px; color: #718392; }
+        @media(max-width: 620px) {
+            main { padding: 16px; }
+            .schedule-toolbar { align-items: flex-start; flex-direction: column; }
+            .filters, .filters label, .filters select { width: 100%; box-sizing: border-box; }
+            .month-nav { width: 100%; justify-content: space-between; }
+        }
+    </style>
+    <th:block th:replace="~{fragments/admin-layout :: styles}"></th:block>
+</head>
+<body>
+<header th:replace="~{fragments/admin-layout :: header}"></header>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/admin-layout :: sidebar}"></aside>
+    <div class="admin-main">
+        <main>
+            <h1>Lịch làm việc bác sĩ</h1>
+            <p class="intro">Lọc theo chuyên khoa để xem bác sĩ làm ca sáng và ca chiều trong tháng. Lịch ngày cụ thể được ưu tiên hơn lịch tuần.</p>
+            <a class="manage-link" th:href="@{/admin/catalog/doctors}">Quản lý bác sĩ</a>
+            <form class="filters" method="get" th:action="@{/admin/catalog/schedules}">
+                <input type="hidden" name="month" th:value="${calendarMonth}">
+                <label for="specialtyFilter">Chuyên khoa
+                    <select id="specialtyFilter" name="specialtyId" onchange="this.form.submit()">
+                        <option th:each="specialty : ${specialties}"
+                                th:value="${specialty.id}"
+                                th:selected="${selectedSpecialtyId == specialty.id}"
+                                th:text="${specialty.name}">Chuyên khoa</option>
+                    </select>
+                </label>
+            </form>
+            <div class="schedule-toolbar">
+                <h2 class="toolbar-title" th:text="${calendarMonthLabel}">Tháng 10 năm 2026</h2>
+                <nav class="month-nav" aria-label="Chọn tháng">
+                    <a th:href="@{/admin/catalog/schedules(month=${previousMonth}, specialtyId=${selectedSpecialtyId})}">‹ Tháng trước</a>
+                    <a th:href="@{/admin/catalog/schedules(month=${nextMonth}, specialtyId=${selectedSpecialtyId})}">Tháng sau ›</a>
+                </nav>
+            </div>
+            <div class="schedule-scroll" th:if="${selectedSpecialty != null}">
+                <table class="schedule-table">
+                    <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th><span class="shift-heading">Ca sáng</span></th>
+                        <th><span class="shift-heading afternoon">Ca chiều</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="calendarDay : ${calendarDays}">
+                        <td>
+                            <span class="day-name" th:text="${#temporals.format(calendarDay, 'EEEE')}">Thứ Hai</span>
+                            <span class="day-date" th:text="${#temporals.format(calendarDay, 'dd/MM/yyyy')}">01/10/2026</span>
+                        </td>
+                        <td>
+                            <span class="doctor-name"
+                                  th:each="doctorName : ${doctorsByDateAndShift[#temporals.format(calendarDay, 'yyyy-MM-dd')]['morning']}"
+                                  th:text="${doctorName}">Tên bác sĩ</span>
+                            <span th:if="${#lists.isEmpty(doctorsByDateAndShift[#temporals.format(calendarDay, 'yyyy-MM-dd')]['morning'])}"
+                                  class="day-date">—</span>
+                        </td>
+                        <td>
+                            <span class="doctor-name afternoon"
+                                  th:each="doctorName : ${doctorsByDateAndShift[#temporals.format(calendarDay, 'yyyy-MM-dd')]['afternoon']}"
+                                  th:text="${doctorName}">Tên bác sĩ</span>
+                            <span th:if="${#lists.isEmpty(doctorsByDateAndShift[#temporals.format(calendarDay, 'yyyy-MM-dd')]['afternoon'])}"
+                                  class="day-date">—</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="empty" th:if="${selectedSpecialty == null}">Chưa có chuyên khoa để hiển thị.</p>
+            <p class="empty" th:if="${selectedSpecialty != null and #lists.isEmpty(doctors)}">
+                Chưa có bác sĩ trong chuyên khoa này.
+            </p>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/admin-layout :: footer}"></footer>
+</body>
+</html>

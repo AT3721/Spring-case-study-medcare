@@ -1,166 +1,359 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Đặt Lịch Khám - MedCare</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đặt Lịch Khám Bệnh - MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; padding: 30px; }
-        .booking-card { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #0056b3; text-align: center; margin-bottom: 25px; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .error { color: #dc3545; font-size: 13px; margin-top: 4px; display: block; }
-        .form-actions { display: flex; gap: 10px; }
-        .btn-submit, .btn-cancel { flex: 1; display: inline-block; text-align: center; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; text-decoration: none; }
-        .btn-submit { background: #28a745; color: white; border: none; }
-        .btn-submit:hover { background: #218838; }
-        .btn-submit:disabled { background: #94a99a; cursor: not-allowed; }
-        .btn-cancel { background: #6c757d; color: white; border: 1px solid #6c757d; box-sizing: border-box; }
-        .btn-cancel:hover { background: #5a6268; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; padding: 0; margin: 0; color: #1e293b; }
+        .booking-card { width: min(720px, calc(100% - 32px)); margin: 36px auto; background: white; padding: 36px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+        h2 { color: #0284c7; text-align: center; margin: 0 0 24px 0; font-size: 24px; font-weight: 800; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 14px; color: #334155; }
+        input, select, textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
+        .error { color: #dc2626; font-size: 13px; margin-top: 5px; display: block; font-weight: 500; }
+        .form-actions { display: flex; gap: 14px; margin-top: 26px; }
+        .btn-submit, .btn-cancel { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 13px 20px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+        .btn-submit { background: #0284c7; color: white; border: none; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); }
+        .btn-submit:hover:not(:disabled) { background: #0369a1; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .btn-cancel:hover { background: #e2e8f0; }
+        
+        /* Banner thông tin bác sĩ (Luồng 1) */
+        .doctor-badge-card { display: flex; gap: 18px; align-items: center; padding: 16px 20px; background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; margin-bottom: 24px; }
+        .doc-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #0284c7; background: #e0f2fe; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #0369a1; font-size: 20px; }
+        .doc-details h4 { margin: 0 0 4px 0; font-size: 17px; color: #0369a1; }
+        .doc-details p { margin: 0; font-size: 13px; color: #475569; }
+        .doc-fee-tag { margin-left: auto; background: #dcfce7; color: #166534; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 14px; border: 1px solid #bbf7d0; white-space: nowrap; }
+
+        /* Wizard Steps (Luồng 2) */
+        .wizard-steps { display: flex; gap: 8px; margin-bottom: 24px; }
+        .step-indicator { flex: 1; text-align: center; padding: 10px 8px; background: #f1f5f9; border-radius: 8px; font-size: 13px; font-weight: 600; color: #64748b; border: 1px solid #e2e8f0; }
+        .step-indicator.active { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+        
+        /* Danh sách Bác Sĩ Trong Khung Giờ (Bước 3) */
+        .doctor-select-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px; }
+        .doctor-radio-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white; }
+        .doctor-radio-item:hover { border-color: #0284c7; background: #f0f9ff; }
+        .doctor-radio-item.selected { border-color: #0284c7; background: #f0f9ff; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); }
+        .doctor-radio-item input[type="radio"] { width: auto; accent-color: #0284c7; margin: 0; }
+        
+        /* Thanh toán bắt buộc */
+        .payment-lock-card { background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 14px; }
+        .payment-lock-badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
     </style>
 </head>
 <body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
 
 <div class="booking-card">
     <h2>📅 Đăng Ký Lịch Khám Bệnh</h2>
 
-    <form th:action="@{/appointments/book}" th:object="${appointmentDTO}" method="post">
-        <div class="form-group">
-            <label>Chọn Bác Sĩ:</label>
-            <select id="doctorId" th:field="*{doctorId}">
-                <option value="">-- Chọn Bác Sĩ --</option>
-                <option th:each="doc : ${doctors}" th:value="${doc.id}" th:text="${doc.name} + ' (' + ${doc.specialty.name} + ')'"></option>
+    <!-- Gợi ý đăng nhập cho bệnh nhân -->
+    <p sec:authorize="!isAuthenticated()" style="margin:0 0 20px; padding: 12px 16px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe; color:#1e40af; font-size:14px">
+        ℹ️ <a th:href="@{/login}" style="color:#0284c7; font-weight:700">Đăng nhập tài khoản bệnh nhân</a> để xem lại lịch hẹn, mã QR check-in và nhận kết quả khám tự động trong hồ sơ.
+    </p>
+
+    <!-- LUỒNG 1: ĐẶT TỪ CARD BÁC SĨ TRANG CHỦ -->
+    <div th:if="${flow == 'doctor' and preSelectedDoctor != null}" class="doctor-badge-card">
+        <img th:if="${preSelectedDoctor.imageUrl != null and !preSelectedDoctor.imageUrl.isBlank()}"
+             th:src="${preSelectedDoctor.imageUrl}" class="doc-avatar" alt="Bác sĩ" />
+        <div th:if="${preSelectedDoctor.imageUrl == null or preSelectedDoctor.imageUrl.isBlank()}" class="doc-avatar">BS</div>
+        <div class="doc-details">
+            <h4 th:text="${preSelectedDoctor.name}">BS. Nguyễn Thanh Tùng</h4>
+            <p>
+                <span th:text="${preSelectedDoctor.degree != null ? preSelectedDoctor.degree : 'Bác sĩ chuyên khoa'}">Học vị</span> · 
+                Chuyên khoa: <strong style="color: #0f172a;" th:text="${preSelectedDoctor.specialty != null ? preSelectedDoctor.specialty.name : 'Đa khoa'}">Chuyên khoa</strong>
+            </p>
+        </div>
+        <div class="doc-fee-tag" th:text="${#numbers.formatDecimal(preSelectedDoctor.consultationFee != null ? preSelectedDoctor.consultationFee : 300000, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+            300.000 VNĐ
+        </div>
+    </div>
+
+    <!-- LUỒNG 2: ĐẶT TỪ NÚT MENU (3 BƯỚC) -->
+    <div th:if="${flow == 'wizard'}" class="wizard-steps">
+        <div class="step-indicator active">1. Chọn Chuyên Khoa</div>
+        <div class="step-indicator active">2. Chọn Ngày & Giờ</div>
+        <div class="step-indicator active">3. Chọn Bác Sĩ</div>
+    </div>
+
+    <form th:action="@{/appointments/book}" th:object="${appointmentDTO}" method="post" id="bookingForm">
+        <input type="hidden" id="flowType" th:value="${flow}" />
+        <input type="hidden" th:field="*{paymentMethod}" value="VNPAY" />
+
+        <!-- TRƯỜNG BÁC SĨ LUỒNG 1 (ẨN VÌ ĐÃ CỐ ĐỊNH TỪ CARD) -->
+        <input th:if="${flow == 'doctor' and preSelectedDoctor != null}" type="hidden" id="doctorId" th:field="*{doctorId}" th:value="${preSelectedDoctor.id}" />
+
+        <!-- LUỒNG 2 - BƯỚC 1: CHỌN CHUYÊN KHOA -->
+        <div th:if="${flow == 'wizard'}" class="form-group">
+            <label for="specialtySelect">Bước 1: Chọn Chuyên Khoa (*):</label>
+            <select id="specialtySelect">
+                <option value="">-- Vui lòng chọn chuyên khoa khám --</option>
+                <option th:each="spec : ${specialties}" th:value="${spec.id}" th:text="${spec.name}"></option>
             </select>
-            <span class="error" th:if="${#fields.hasErrors('doctorId')}" th:errors="*{doctorId}"></span>
         </div>
 
+        <!-- CHỌN NGÀY KHÁM (CẢ 2 LUỒNG) -->
         <div class="form-group">
-            <label>Ngày Khám:</label>
+            <label for="appointmentDate">
+                <span th:if="${flow == 'doctor'}">Ngày Khám (*):</span>
+                <span th:if="${flow == 'wizard'}">Bước 2: Chọn Ngày Khám (*):</span>
+            </label>
             <input id="appointmentDate" type="date" th:field="*{appointmentDate}" />
             <span class="error" th:if="${#fields.hasErrors('appointmentDate')}" th:errors="*{appointmentDate}"></span>
         </div>
 
+        <!-- CHỌN KHUNG GIỜ KHÁM (CẢ 2 LUỒNG) -->
         <div class="form-group">
-            <label>Khung Giờ Khám (Time Slot):</label>
-            <select id="timeSlotId" th:field="*{timeSlotId}"
-                    th:attr="data-initial-slot=${selectedTimeSlotId}" disabled>
-                <option value="">-- Chọn bác sĩ và ngày khám trước --</option>
+            <label for="timeSlotId">
+                <span th:if="${flow == 'doctor'}">Khung Giờ Khám (*):</span>
+                <span th:if="${flow == 'wizard'}">Khung Giờ Khám (Time Slot) (*):</span>
+            </label>
+            <select id="timeSlotId" th:field="*{timeSlotId}" th:attr="data-initial-slot=${selectedTimeSlotId}" disabled>
+                <option value="">-- Vui lòng chọn ngày khám trước --</option>
             </select>
             <span class="error" th:if="${#fields.hasErrors('timeSlotId')}" th:errors="*{timeSlotId}"></span>
-            <span id="availabilityMessage" role="status" aria-live="polite" style="font-size: 13px; color: #6c757d;"></span>
+            <span id="availabilityMessage" style="font-size: 13px; color: #64748b; margin-top: 4px; display: block;"></span>
         </div>
 
+        <!-- LUỒNG 2 - BƯỚC 3: CHỌN BÁC SĨ CÓ CA TRỐNG TRONG KHUNG GIỜ ĐÃ CHỌN -->
+        <div th:if="${flow == 'wizard'}" class="form-group" id="doctorStepContainer" style="display: none;">
+            <label>Bước 3: Chọn Bác Sĩ Phụ Trách Ca Khám (*):</label>
+            <div id="doctorLoadingMsg" style="font-size: 13px; color: #64748b; display: none;">Đang tìm bác sĩ có ca trống...</div>
+            <div id="doctorListContainer" class="doctor-select-grid"></div>
+            <input type="hidden" id="doctorId" th:field="*{doctorId}" />
+            <span class="error" th:if="${#fields.hasErrors('doctorId')}" th:errors="*{doctorId}"></span>
+        </div>
+
+        <!-- THÔNG TIN BỆNH NHÂN -->
         <div class="form-group">
-            <label>Họ và Tên Bệnh Nhận:</label>
-            <input type="text" th:field="*{patientName}" placeholder="Nguyễn Văn A" />
+            <label for="patientName">Họ và Tên Bệnh Nhân (*):</label>
+            <input type="text" id="patientName" th:field="*{patientName}" placeholder="Nguyễn Văn A" />
             <span class="error" th:if="${#fields.hasErrors('patientName')}" th:errors="*{patientName}"></span>
         </div>
 
         <div class="form-group">
-            <label>Số Điện Thoại Liên Hệ:</label>
-            <input type="text" th:field="*{patientPhone}" placeholder="0912345678" />
+            <label for="patientPhone">Số Điện Thoại Liên Hệ (*):</label>
+            <input type="text" id="patientPhone" th:field="*{patientPhone}" placeholder="0912345678" />
             <span class="error" th:if="${#fields.hasErrors('patientPhone')}" th:errors="*{patientPhone}"></span>
         </div>
 
         <div class="form-group">
-            <label>Email (Không bắt buộc):</label>
-            <input type="email" th:field="*{patientEmail}" placeholder="example@gmail.com" />
+            <label for="patientEmail">Email (Dùng để nhận Mã QR & Phiếu xác nhận khám):</label>
+            <input type="email" id="patientEmail" th:field="*{patientEmail}" placeholder="example@gmail.com" />
             <span class="error" th:if="${#fields.hasErrors('patientEmail')}" th:errors="*{patientEmail}"></span>
         </div>
 
         <div class="form-group">
-            <label>Lý Do Khám / Triệu Chứng:</label>
-            <textarea th:field="*{notes}" rows="3" placeholder="Đau đầu, ho nhẹ..."></textarea>
+            <label for="notes">Lý Do Khám / Mô Tả Triệu Chứng:</label>
+            <textarea id="notes" th:field="*{notes}" rows="3" placeholder="Đau đầu, ho, sốt nhẹ..."></textarea>
+        </div>
+
+        <!-- THANH TOÁN BẮT BUỘC CHUYỂN KHOẢN -->
+        <div class="form-group" style="margin-top: 24px;">
+            <label>Hình Thức Thanh Toán:</label>
+            <div class="payment-lock-card">
+                <div style="font-size: 24px;">💳</div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="font-weight: 700; color: #0f172a; font-size: 15px;">Chuyển khoản trực tuyến qua Ngân hàng / VNPay</span>
+                        <span class="payment-lock-badge">BẮT BUỘC</span>
+                    </div>
+                    <span style="font-size: 13px; color: #64748b; line-height: 1.4; display: block;">
+                        Hệ thống áp dụng thanh toán chuyển khoản trước để đảm bảo giữ chỗ ca khám. Sau khi thanh toán, hệ thống sẽ tự động xác nhận lịch hẹn và gửi mã QR check-in về email.
+                    </span>
+                </div>
+            </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-submit" disabled>Xác Nhận Đặt Lịch</button>
+            <button type="submit" class="btn-submit" disabled>Thanh Toán & Xác Nhận Đặt Lịch</button>
             <a th:href="@{/doctors}" class="btn-cancel">Hủy</a>
         </div>
     </form>
 </div>
 
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const doctor = document.getElementById('doctorId');
-        const date = document.getElementById('appointmentDate');
-        const slot = document.getElementById('timeSlotId');
+        const flow = document.getElementById('flowType').value;
+        const dateInput = document.getElementById('appointmentDate');
+        const slotSelect = document.getElementById('timeSlotId');
         const message = document.getElementById('availabilityMessage');
-        const submit = document.querySelector('.btn-submit');
-        let initialSlot = slot.dataset.initialSlot || '';
-        let activeRequest = null;
+        const submitBtn = document.querySelector('.btn-submit');
+        const doctorHidden = document.getElementById('doctorId');
+
+        // Giới hạn ngày khám tối thiểu từ ngày mai
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const minDate = new Date(tomorrow.getTime() - tomorrow.getTimezoneOffset() * 60000)
             .toISOString().slice(0, 10);
-        date.min = minDate;
+        dateInput.min = minDate;
 
-        async function refreshAvailableSlots() {
-            if (activeRequest) activeRequest.abort();
-            const requestController = new AbortController();
-            activeRequest = requestController;
-            slot.replaceChildren(new Option('-- Đang tải khung giờ --', ''));
-            slot.disabled = true;
-            submit.disabled = true;
-            message.textContent = '';
-            if (!doctor.value || !date.value) {
-                slot.replaceChildren(new Option('-- Chọn bác sĩ và ngày khám trước --', ''));
-                message.textContent = 'Chọn bác sĩ và ngày khám để xem ca còn trống.';
-                activeRequest = null;
-                return;
-            }
-            if (date.value <= minDate) {
-                slot.replaceChildren(new Option('-- Ngày khám phải từ ngày mai --', ''));
-                message.textContent = 'Vui lòng chọn ngày khám trong tương lai.';
-                activeRequest = null;
-                return;
-            }
-            const preferredSlot = initialSlot;
-            initialSlot = '';
-            try {
-                const url = new URL('/api/appointments/available-slots', window.location.origin);
-                url.searchParams.set('doctorId', doctor.value);
-                url.searchParams.set('date', date.value);
-                const response = await fetch(url, { signal: requestController.signal });
-                if (activeRequest !== requestController) return;
-                if (!response.ok) {
-                    throw new Error('Không thể tải khung giờ. Vui lòng thử lại.');
-                }
-                const slots = await response.json();
-                slot.replaceChildren(new Option('-- Chọn khung giờ --', ''));
-                slots.forEach(item => {
-                    const option = new Option(item.displayText, item.id);
-                    if (String(item.id) === preferredSlot) option.selected = true;
-                    slot.add(option);
-                });
-                message.textContent = slots.length ? `Còn ${slots.length} khung giờ trống.` : 'Ngày này đã hết khung giờ trống.';
-                if (slots.length === 0) {
-                    slot.replaceChildren(new Option('-- Hết khung giờ --', ''));
-                }
-            } catch (error) {
-                if (error.name === 'AbortError') return;
-                slot.replaceChildren(new Option('-- Không tải được khung giờ --', ''));
-                message.textContent = error.message;
-            } finally {
-                if (activeRequest !== requestController) return;
-                activeRequest = null;
-                slot.disabled = false;
-                submit.disabled = !slot.value;
-            }
+        function checkFormReady() {
+            const hasDoctor = Boolean(doctorHidden.value);
+            const hasDate = Boolean(dateInput.value);
+            const hasSlot = Boolean(slotSelect.value);
+            submitBtn.disabled = !(hasDoctor && hasDate && hasSlot);
         }
 
-        function selectionChanged() {
-            initialSlot = '';
-            slot.value = '';
-            refreshAvailableSlots();
+        // ==========================================
+        // LUỒNG 1: ĐẶT TỪ CARD BÁC SĨ TRANG CHỦ
+        // ==========================================
+        if (flow === 'doctor') {
+            const docId = doctorHidden.value;
+
+            async function refreshDoctorSlots() {
+                if (!dateInput.value) {
+                    slotSelect.replaceChildren(new Option('-- Chọn ngày khám trước --', ''));
+                    slotSelect.disabled = true;
+                    message.textContent = 'Vui lòng chọn ngày khám để tải khung giờ còn trống của bác sĩ.';
+                    checkFormReady();
+                    return;
+                }
+
+                slotSelect.replaceChildren(new Option('-- Đang tải ca khám trống --', ''));
+                slotSelect.disabled = true;
+                message.textContent = 'Đang kiểm tra lịch làm việc của bác sĩ...';
+
+                try {
+                    const url = new URL('/api/appointments/available-slots', window.location.origin);
+                    url.searchParams.set('doctorId', docId);
+                    url.searchParams.set('date', dateInput.value);
+
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error('Không thể tải khung giờ.');
+                    const slots = await res.json();
+
+                    if (!slots || slots.length === 0) {
+                        slotSelect.replaceChildren(new Option('-- Bác sĩ không có ca trống ngày này --', ''));
+                        message.textContent = 'Bác sĩ không có lịch làm việc hoặc đã kín ca trong ngày này. Vui lòng chọn ngày khác.';
+                    } else {
+                        slotSelect.replaceChildren(new Option('-- Chọn khung giờ khám --', ''));
+                        slots.forEach(s => slotSelect.add(new Option(s.displayText, s.id)));
+                        message.textContent = `Bác sĩ còn ${slots.length} khung giờ trống trong ngày này.`;
+                        slotSelect.disabled = false;
+                    }
+                } catch (e) {
+                    slotSelect.replaceChildren(new Option('-- Lỗi tải khung giờ --', ''));
+                    message.textContent = e.message;
+                } finally {
+                    checkFormReady();
+                }
+            }
+
+            dateInput.addEventListener('change', refreshDoctorSlots);
+            slotSelect.addEventListener('change', checkFormReady);
+            if (dateInput.value) refreshDoctorSlots();
         }
 
-        doctor.addEventListener('change', selectionChanged);
-        date.addEventListener('change', selectionChanged);
-        slot.addEventListener('change', () => { submit.disabled = !slot.value; });
-        if (doctor.value && date.value) refreshAvailableSlots();
-        else message.textContent = 'Chọn bác sĩ và ngày khám để xem ca còn trống.';
+        // ==========================================
+        // LUỒNG 2: ĐẶT TỪ NÚT ĐĂNG KÝ MENU (3 BƯỚC)
+        // ==========================================
+        if (flow === 'wizard') {
+            const specialtySelect = document.getElementById('specialtySelect');
+            const doctorStepContainer = document.getElementById('doctorStepContainer');
+            const doctorLoadingMsg = document.getElementById('doctorLoadingMsg');
+            const doctorListContainer = document.getElementById('doctorListContainer');
+
+            // Bước 2: Load danh sách tất cả các slot giờ khám đang hoạt động
+            async function loadAllSlots() {
+                slotSelect.replaceChildren(new Option('-- Đang tải khung giờ --', ''));
+                try {
+                    const res = await fetch('/api/appointments/all-slots');
+                    const slots = await res.json();
+                    slotSelect.replaceChildren(new Option('-- Chọn khung giờ khám --', ''));
+                    slots.forEach(s => slotSelect.add(new Option(s.displayText, s.id)));
+                    slotSelect.disabled = false;
+                } catch (e) {
+                    slotSelect.replaceChildren(new Option('-- Lỗi tải khung giờ --', ''));
+                }
+            }
+
+            // Bước 3: Tìm danh sách bác sĩ thuộc chuyên khoa có ca trống vào ngày & giờ đã chọn
+            async function findAvailableDoctors() {
+                const specId = specialtySelect.value;
+                const dateVal = dateInput.value;
+                const slotId = slotSelect.value;
+
+                doctorHidden.value = '';
+                doctorListContainer.innerHTML = '';
+                checkFormReady();
+
+                if (!specId || !dateVal || !slotId) {
+                    doctorStepContainer.style.display = 'none';
+                    return;
+                }
+
+                doctorStepContainer.style.display = 'block';
+                doctorLoadingMsg.style.display = 'block';
+
+                try {
+                    const url = new URL('/api/appointments/available-doctors', window.location.origin);
+                    url.searchParams.set('specialtyId', specId);
+                    url.searchParams.set('date', dateVal);
+                    url.searchParams.set('timeSlotId', slotId);
+
+                    const res = await fetch(url);
+                    const doctors = await res.json();
+                    doctorLoadingMsg.style.display = 'none';
+
+                    if (!doctors || doctors.length === 0) {
+                        doctorListContainer.innerHTML = '<div style="padding: 16px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; color: #be123c; font-size: 14px;">⚠️ Rất tiếc, hiện không có bác sĩ nào thuộc chuyên khoa này nhận khám vào khung giờ đã chọn. Vui lòng chọn khung giờ hoặc ngày khác.</div>';
+                    } else {
+                        doctors.forEach(doc => {
+                            const item = document.createElement('label');
+                            item.className = 'doctor-radio-item';
+                            const feeFormatted = Number(doc.consultationFee).toLocaleString('vi-VN');
+                            item.innerHTML = `
+                                <input type="radio" name="wizardDoctorRadio" value="${doc.id}">
+                                <div>
+                                    <strong style="color: #0f172a; font-size: 15px; display: block;">${doc.name}</strong>
+                                    <span style="font-size: 13px; color: #64748b;">${doc.degree || 'Bác sĩ chuyên khoa'}</span>
+                                </div>
+                                <span style="margin-left: auto; font-weight: 700; color: #0284c7; font-size: 14px;">${feeFormatted} VNĐ</span>
+                            `;
+                            item.querySelector('input').addEventListener('change', () => {
+                                document.querySelectorAll('.doctor-radio-item').forEach(el => el.classList.remove('selected'));
+                                item.classList.add('selected');
+                                doctorHidden.value = doc.id;
+                                checkFormReady();
+                            });
+                            doctorListContainer.appendChild(item);
+                        });
+                    }
+                } catch (e) {
+                    doctorLoadingMsg.style.display = 'none';
+                    doctorListContainer.innerHTML = `<div style="color: red; font-size: 13px;">${e.message}</div>`;
+                }
+            }
+
+            specialtySelect.addEventListener('change', () => {
+                if (dateInput.value && slotSelect.value) findAvailableDoctors();
+            });
+
+            dateInput.addEventListener('change', () => {
+                if (!slotSelect.options.length || slotSelect.disabled) {
+                    loadAllSlots();
+                }
+                if (specialtySelect.value && slotSelect.value) {
+                    findAvailableDoctors();
+                }
+            });
+
+            slotSelect.addEventListener('change', () => {
+                findAvailableDoctors();
+            });
+
+            if (dateInput.value) {
+                loadAllSlots();
+            }
+        }
     });
 </script>
 </body>

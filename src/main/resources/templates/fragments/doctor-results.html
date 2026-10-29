@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="doctor-results-content" th:fragment="content">
+    <section aria-labelledby="results-heading">
+        <div class="results-head">
+            <h2 id="results-heading">Đội ngũ bác sĩ</h2>
+            <p class="results-count" th:text="'Tìm thấy ' + ${doctors.totalElements} + ' bác sĩ'">Tìm thấy 0 bác sĩ</p>
+        </div>
+
+        <div class="doctor-grid" th:if="${!doctors.content.isEmpty()}">
+            <article class="doctor-card" th:each="doctor : ${doctors.content}">
+                <div class="doctor-top">
+                    <img class="doctor-image" th:if="${doctor.imageUrl != null and !doctor.imageUrl.isBlank()}"
+                         th:src="${doctor.imageUrl}" th:alt="${'Ảnh ' + doctor.name}">
+                    <div class="avatar" aria-hidden="true"
+                         th:if="${doctor.imageUrl == null or doctor.imageUrl.isBlank()}"
+                         th:text="${#strings.isEmpty(doctor.name) ? 'B' : #strings.substring(doctor.name, 0, 1)}">B</div>
+                    <div class="doctor-title">
+                        <h3 class="doctor-name" th:text="${doctor.name}">Tên bác sĩ</h3>
+                        <div class="doctor-degree" th:text="${doctor.degree != null ? doctor.degree : 'Bác sĩ chuyên khoa'}">Học vị</div>
+                    </div>
+                </div>
+                <span class="doctor-specialty" th:text="${doctor.specialty.name}">Chuyên khoa</span>
+                <p class="doctor-bio" th:text="${doctor.bio != null && !doctor.bio.isBlank() ? doctor.bio : 'Thông tin giới thiệu sẽ được cập nhật.'}">Kinh nghiệm và chuyên môn</p>
+                <div class="card-meta">
+                    <div>
+                        <span class="meta-label">Chi phí tham khảo</span>
+                        <span class="fee" th:if="${doctor.consultationFee != null}"
+                              th:text="${#numbers.formatDecimal(doctor.consultationFee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">300.000 VNĐ</span>
+                        <span class="fee" th:if="${doctor.consultationFee == null}">Liên hệ</span>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a class="button secondary" th:href="@{/doctors/{id}(id=${doctor.id})}">Thông tin</a>
+                    <a class="button" th:href="@{/appointments/book(doctorId=${doctor.id})}">Đặt lịch</a>
+                </div>
+            </article>
+        </div>
+
+        <div class="empty" th:if="${doctors.content.isEmpty()}">
+            <div class="empty-icon" aria-hidden="true">⌕</div>
+            <h3>Chưa tìm thấy bác sĩ phù hợp</h3>
+            <p>Thử đổi từ khóa hoặc chọn một chuyên khoa khác.</p>
+            <a class="button secondary" th:href="@{/doctors}">Xem tất cả bác sĩ</a>
+        </div>
+
+        <nav class="pagination" th:if="${doctors.totalPages > 1}" aria-label="Phân trang danh sách bác sĩ">
+            <a th:if="${doctors.hasPrevious()}"
+               th:href="@{/doctors(page=${doctors.number - 1}, specialtyId=${selectedSpecialtyId}, q=${searchTerm}, sortBy=${selectedSortBy})}"
+               aria-label="Trang trước">‹</a>
+            <span class="current" aria-current="page"
+                  th:text="${doctors.number + 1} + ' / ' + ${doctors.totalPages}">1 / 1</span>
+            <a th:if="${doctors.hasNext()}"
+               th:href="@{/doctors(page=${doctors.number + 1}, specialtyId=${selectedSpecialtyId}, q=${searchTerm}, sortBy=${selectedSortBy})}"
+               aria-label="Trang sau">›</a>
+        </nav>
+    </section>
+</div>
+</body>
+</html>

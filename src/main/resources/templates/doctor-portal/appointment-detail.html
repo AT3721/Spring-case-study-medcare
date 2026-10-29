@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chi Tiết Khám & Kê Đơn - MedCare</title>
+    <link rel="stylesheet" th:href="@{/css/common.css}">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg-gray: #f8fafc;
+            --card-border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-gray);
+            margin: 0;
+            padding: 0;
+            color: #1e293b;
+        }
+        .portal-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: white;
+            padding: 18px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .portal-brand {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .back-nav {
+            margin-bottom: 20px;
+        }
+        .back-nav a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .info-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #0f172a;
+            text-align: right;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            padding: 11px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-submit:hover { background: var(--primary-dark); }
+        .alert-success {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .rx-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+        .rx-table th {
+            background: #f1f5f9;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #cbd5e1;
+            color: #475569;
+        }
+        .rx-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .btn-del {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .btn-del:hover { background: #fecaca; }
+    </style>
+</head>
+<body>
+
+    <header class="portal-header">
+        <div class="portal-brand">
+            🩺 <span>MedCare - Cổng Bác Sĩ</span>
+        </div>
+        <div style="font-size: 14px;">
+            Bác sĩ: <strong th:text="${doctor.name}">BS. Tùng</strong>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="back-nav">
+            <a th:href="@{/doctor/appointments}">← Quay lại Danh sách khám</a>
+        </div>
+
+        <div th:if="${successMsg}" class="alert-success" th:text="${successMsg}"></div>
+        <div th:if="${errorMsg}" class="alert-error" th:text="${errorMsg}"></div>
+
+        <div class="grid-layout">
+            <!-- Cột trái: Thông tin Bệnh nhân -->
+            <div>
+                <div class="card">
+                    <h3 class="card-title">👤 Thông Tin Bệnh Nhân</h3>
+                    <div class="info-row">
+                        <span class="info-label">Mã đặt lịch:</span>
+                        <span class="info-value" style="color: #0284c7;" th:text="${appointment.bookingCode}">MC-123</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Họ và tên:</span>
+                        <span class="info-value" th:text="${appointment.patientName}">Nguyễn Văn A</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value" th:text="${appointment.patientPhone}">0912345678</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value" th:text="${appointment.patientEmail ?: 'Chưa cung cấp'}">email@test.com</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày khám:</span>
+                        <span class="info-value" th:text="${#temporals.format(appointment.appointmentDate, 'dd/MM/yyyy')}">27/10/2026</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Giờ khám:</span>
+                        <span class="info-value">
+                            <span th:text="${#temporals.format(appointment.timeSlot.startTime, 'HH:mm')}">08:00</span> -
+                            <span th:text="${#temporals.format(appointment.timeSlot.endTime, 'HH:mm')}">08:30</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Trạng thái:</span>
+                        <span class="info-value" th:text="${appointment.status.name()}">CONFIRMED</span>
+                    </div>
+                    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+                        <span class="info-label" style="display: block; margin-bottom: 4px;">Ghi chú triệu chứng từ bệnh nhân:</span>
+                        <div style="background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 13px; color: #334155;"
+                             th:text="${appointment.notes ?: 'Không có ghi chú.'}"></div>
+                    </div>
+                </div>
+
+                <!-- Cập nhật Chẩn đoán & Kết luận (Phiếu Khám Bệnh) -->
+                <div class="card">
+                    <h3 class="card-title">📝 Phiếu Khám Bệnh & Kết Luận</h3>
+                    <p style="font-size: 13px; color: #64748b; margin-top: -6px; margin-bottom: 14px;">
+                        Bác sĩ ghi nhận kết quả chẩn đoán và chỉ định điều trị. Khi tích chọn "Đã hoàn thành khám", kết quả và đơn thuốc sẽ được lưu vào tài khoản bệnh nhân.
+                    </p>
+                    <form th:action="@{'/doctor/appointments/' + ${appointment.id} + '/clinical-result'}" method="post">
+                        <div class="form-group">
+                            <label for="clinicalResult">Kết luận chẩn đoán của bác sĩ (*):</label>
+                            <textarea id="clinicalResult" name="clinicalResult" rows="4"
+                                      placeholder="Ví dụ: Viêm họng cấp / Viêm xoang nhẹ. Chỉ định giữ ấm vùng cổ, uống đủ nước và tuân thủ đơn thuốc."
+                                      th:text="${appointment.clinicalResult}"></textarea>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="markCompleted" name="markCompleted" value="true"
+                                   th:checked="${appointment.status.name() == 'COMPLETED'}" style="width: auto;" />
+                            <label for="markCompleted" style="margin-bottom: 0; cursor: pointer; font-weight: 700; color: #166534;">
+                                ✓ Đánh dấu ĐÃ HOÀN THÀNH KHÁM
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-submit" style="width: 100%;">Lưu Kết Quả Vào Hồ Sơ Bệnh Nhân</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Cột phải: Kê đơn thuốc -->
+            <div>
+                <!-- Danh sách thuốc đã kê -->
+                <div class="card">
+                    <h3 class="card-title">💊 Đơn Thuốc Đã Kê</h3>
+                    <div th:if="${#lists.isEmpty(prescriptions)}" style="padding: 24px; text-align: center; color: #94a3b8; font-size: 14px;">
+                        Chưa có thuốc nào trong đơn của lịch khám này.
+                    </div>
+
+                    <table th:unless="${#lists.isEmpty(prescriptions)}" class="rx-table">
+                        <thead>
+                            <tr>
+                                <th>TÊN THUỐC</th>
+                                <th>HÀM LƯỢNG</th>
+                                <th>SỐ LƯỢNG</th>
+                                <th>CÁCH DÙNG</th>
+                                <th>LỜI DẶN / TÁI KHÁM</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="rx : ${prescriptions}">
+                                <td><strong th:text="${rx.medicineName}">Paracetamol</strong></td>
+                                <td th:text="${rx.dosage}">500mg</td>
+                                <td><span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 4px; font-weight: 600;" th:text="${rx.quantity}">20 viên</span></td>
+                                <td th:text="${rx.usageInstructions ?: '-'}">Uống 1 viên sau ăn sáng - chiều</td>
+                                <td>
+                                    <div th:if="${rx.doctorAdvice}" style="font-size: 12px; color: #475569;" th:text="${rx.doctorAdvice}"></div>
+                                    <div th:if="${rx.followUpDate}" style="font-size: 11px; color: #0284c7; font-weight: 600; margin-top: 2px;">
+                                        Tái khám: <span th:text="${#temporals.format(rx.followUpDate, 'dd/MM/yyyy')}"></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <form th:action="@{'/doctor/appointments/' + ${appointment.id} + '/prescriptions/' + ${rx.id} + '/delete'}" method="post" style="margin: 0;">
+                                        <button type="submit" class="btn-del" onclick="return confirm('Bạn có chắc muốn xóa mục thuốc này?');">Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Form thêm thuốc vào đơn -->
+                <div class="card">
+                    <h3 class="card-title">➕ Kê Thêm Thuốc Vào Đơn</h3>
+                    <form th:action="@{'/doctor/appointments/' + ${appointment.id} + '/prescriptions/save'}" th:object="${prescriptionForm}" method="post">
+                        <div class="form-group">
+                            <label for="medicineName">Tên thuốc (*):</label>
+                            <input type="text" id="medicineName" th:field="*{medicineName}" placeholder="Ví dụ: Paracetamol, Amoxicillin, Augmentin..." required />
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dosage">Hàm lượng (*):</label>
+                                <input type="text" id="dosage" th:field="*{dosage}" placeholder="Ví dụ: 500mg, 10ml, 250mg/5ml..." required />
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Số lượng (*):</label>
+                                <input type="text" id="quantity" th:field="*{quantity}" placeholder="Ví dụ: 20 viên, 2 lọ, 1 hộp..." required />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="usageInstructions">Cách dùng:</label>
+                            <textarea id="usageInstructions" th:field="*{usageInstructions}" rows="2" placeholder="Ví dụ: Ngày uống 2 lần, mỗi lần 1 viên sau ăn no sáng và tối..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="doctorAdvice">Lời dặn bác sĩ:</label>
+                            <input type="text" id="doctorAdvice" th:field="*{doctorAdvice}" placeholder="Ví dụ: Kiêng đồ cay nóng, uống nhiều nước, nghỉ ngơi hợp lý..." />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="followUpDate">Ngày tái khám (nếu có):</label>
+                            <input type="date" id="followUpDate" th:field="*{followUpDate}" />
+                        </div>
+
+                        <button type="submit" class="btn-submit">➕ Thêm Vào Đơn Thuốc</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

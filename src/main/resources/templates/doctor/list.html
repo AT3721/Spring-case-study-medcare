@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Tìm bác sĩ theo chuyên khoa, xem thông tin khám và đặt lịch tại MedCare.">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>Bác sĩ & Chuyên khoa | MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
     <style>
         :root {
             color-scheme: light;
@@ -21,15 +24,31 @@
         * { box-sizing: border-box; }
         body { margin: 0; background: var(--background); color: var(--ink); font-family: "Segoe UI", Arial, sans-serif; line-height: 1.5; }
         a { color: inherit; }
-        .topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
-        .topbar-inner, .container { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
-        .topbar-inner { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-        .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--primary-dark); font-size: 22px; font-weight: 800; text-decoration: none; letter-spacing: -.5px; }
-        .brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: var(--primary); color: white; font-size: 22px; }
-        .nav { display: flex; align-items: center; gap: 22px; }
-        .nav a { color: var(--muted); font-size: 14px; font-weight: 650; text-decoration: none; }
-        .nav a:hover, .nav a:focus-visible { color: var(--primary-dark); }
-        .nav .staff-link { padding: 9px 14px; border: 1px solid var(--line); border-radius: 9px; }
+        .container { width: min(1120px, calc(100% - 40px)); margin-right: auto; margin-left: auto; }
+        .clinic-banner { overflow: hidden; padding: 42px 0; background: linear-gradient(115deg, #075b68 0%, #087e8b 56%, #18a3a0 100%); color: #fff; }
+        .clinic-banner-inner { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); align-items: center; gap: 42px; }
+        .clinic-eyebrow { margin: 0 0 10px; color: #b8f0e9; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+        .clinic-title { max-width: 720px; margin: 0; font-size: clamp(30px, 4vw, 44px); line-height: 1.15; letter-spacing: -.8px; }
+        .clinic-copy { max-width: 680px; margin: 15px 0 0; color: #e1f4f3; font-size: 16px; line-height: 1.7; }
+        .clinic-banner .button { margin-top: 22px; background: #fff; color: #075b68; }
+        .clinic-banner .button:hover { background: #eaf7f7; }
+        .clinic-highlights { display: grid; gap: 12px; padding: 20px; border: 1px solid rgba(255,255,255,.25); border-radius: 16px; background: rgba(255,255,255,.1); }
+        .clinic-highlight { display: flex; align-items: center; gap: 12px; color: #f2ffff; font-size: 14px; font-weight: 650; }
+        .clinic-highlight-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 10px; background: rgba(255,255,255,.16); font-size: 17px; }
+        .banner-specialties { grid-column: 1 / -1; padding-top: 4px; }
+        .banner-specialties-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+        .banner-specialties-heading h2 { margin: 0; font-size: 21px; }
+        .banner-specialties-heading p { margin: 4px 0 0; color: #d8f2f0; font-size: 13px; }
+        .banner-specialty-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        .banner-specialty-card { display: flex; min-width: 0; flex-direction: column; padding: 16px; border: 1px solid rgba(255,255,255,.28); border-radius: 13px; background: rgba(255,255,255,.12); }
+        .banner-specialty-card h3 { margin: 0; color: #fff; font-size: 16px; }
+        .banner-specialty-description { min-height: 57px; margin: 8px 0 12px; color: #e1f4f3; font-size: 12px; line-height: 1.5; }
+        .banner-doctor-list { display: grid; gap: 6px; margin-bottom: 14px; }
+        .banner-doctor-link { color: #fff; font-size: 12px; font-weight: 650; text-decoration: none; }
+        .banner-doctor-link::before { content: "• "; color: #b8f0e9; }
+        .banner-doctor-link:hover { text-decoration: underline; }
+        .banner-specialty-filter { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin-top: auto; padding: 8px 10px; border: 1px solid rgba(255,255,255,.65); border-radius: 7px; color: #fff; font-size: 12px; font-weight: 750; text-decoration: none; }
+        .banner-specialty-filter:hover { background: #fff; color: #075b68; }
         .hero { padding: 58px 0 74px; background: linear-gradient(120deg, #e7f7f7 0%, #f1f8ff 60%, #edf5fb 100%); }
         .hero-content { max-width: 720px; }
         .eyebrow { margin: 0 0 12px; color: var(--primary-dark); font-size: 13px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
@@ -62,11 +81,12 @@
         .doctor-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
         .doctor-top { display: flex; align-items: flex-start; gap: 13px; }
         .avatar { display: grid; width: 52px; height: 52px; flex: 0 0 52px; place-items: center; border-radius: 15px; background: var(--pale); color: var(--primary-dark); font-size: 21px; font-weight: 800; }
+        .doctor-image { width: 64px; height: 64px; flex: 0 0 64px; padding: 2px; border-radius: 15px; background: #f2f6f8; object-fit: contain; }
         .doctor-title { min-width: 0; }
         .doctor-name { margin: 1px 0 4px; font-size: 17px; line-height: 1.3; }
         .doctor-degree { color: var(--muted); font-size: 13px; }
         .doctor-specialty { display: inline-flex; align-self: flex-start; margin-top: 17px; padding: 5px 10px; border-radius: 999px; background: #edf4ff; color: #315a95; font-size: 12px; font-weight: 750; }
-        .doctor-bio { display: -webkit-box; min-height: 62px; overflow: hidden; margin: 14px 0 0; color: #52677a; font-size: 13px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+        .doctor-bio { display: -webkit-box; min-height: 84px; overflow: hidden; margin: 14px 0 0; color: #52677a; font-size: 13px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
         .card-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #edf1f3; }
         .meta-label { display: block; color: var(--muted); font-size: 11px; }
         .fee { color: var(--primary-dark); font-size: 15px; font-weight: 800; white-space: nowrap; }
@@ -85,32 +105,29 @@
         .trust-icon { font-size: 20px; }
         .trust-item strong { display: block; font-size: 13px; }
         .trust-item span:last-child { color: var(--muted); font-size: 12px; }
-        footer { padding: 22px 0; border-top: 1px solid var(--line); background: white; color: var(--muted); font-size: 13px; }
-        .footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
-        .footer-links { display: flex; flex-wrap: wrap; gap: 16px; }
-        .footer-links a { color: var(--muted); text-decoration: none; }
-        .footer-links a:hover { color: var(--primary-dark); }
         @media (max-width: 900px) {
             .filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .doctor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .clinic-banner-inner { grid-template-columns: 1fr; gap: 26px; }
+            .clinic-highlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .banner-specialty-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 620px) {
-            .topbar-inner, .container { width: min(100% - 28px, 1120px); }
-            .topbar-inner { min-height: 62px; }
-            .nav { gap: 12px; }
-            .nav a { font-size: 12px; }
-            .nav .staff-link { padding: 7px 9px; }
-            .brand { font-size: 19px; }
-            .brand-mark { width: 32px; height: 32px; }
+            .container { width: min(1120px, calc(100% - 28px)); }
             .hero { padding: 42px 0 58px; }
             .hero-copy { font-size: 15px; }
+            .clinic-banner { padding: 34px 0; }
+            .clinic-copy { font-size: 15px; }
+            .clinic-highlights { grid-template-columns: 1fr; padding: 16px; }
+            .banner-specialties-heading { align-items: flex-start; flex-direction: column; }
+            .banner-specialty-grid { grid-template-columns: 1fr; }
+            .banner-specialty-description { min-height: 0; }
             .search-panel { padding: 17px; }
             .filter-form { grid-template-columns: 1fr; }
             .filter-form .button, .reset-link { width: 100%; }
             .doctor-grid { grid-template-columns: 1fr; }
             .results-head { align-items: flex-start; flex-direction: column; gap: 4px; }
             .trust-strip { grid-template-columns: 1fr; }
-            .footer-inner { align-items: flex-start; flex-direction: column; }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -118,19 +135,51 @@
     </style>
 </head>
 <body>
-<header class="topbar">
-    <div class="topbar-inner">
-        <a class="brand" th:href="@{/doctors}" aria-label="MedCare - Trang chủ">
-            <span class="brand-mark" aria-hidden="true">+</span>
-            <span>MedCare</span>
-        </a>
-        <nav class="nav" aria-label="Điều hướng chính">
-            <a th:href="@{/doctors#doctor-results}" aria-current="location">Bác sĩ</a>
-            <a th:href="@{/appointments/search}">Tra cứu lịch</a>
-            <a class="staff-link" th:href="@{/login}">Dành cho nhân viên</a>
-        </nav>
+<header th:replace="~{fragments/site-layout :: header}"></header>
+
+<section class="clinic-banner" aria-labelledby="clinic-heading">
+    <div class="container clinic-banner-inner">
+        <div>
+            <p class="clinic-eyebrow">MedCare · Chăm sóc tận tâm</p>
+            <h1 class="clinic-title" id="clinic-heading">Phòng khám MedCare đồng hành cùng sức khỏe gia đình bạn</h1>
+            <p class="clinic-copy">Chúng tôi mang đến trải nghiệm chăm sóc sức khỏe thuận tiện với đội ngũ bác sĩ thuộc nhiều chuyên khoa, thông tin minh bạch và quy trình đặt lịch trực tuyến dễ dàng.</p>
+            <a class="button" href="#doctor-results">Khám phá đội ngũ bác sĩ <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="clinic-highlights" aria-label="Điểm nổi bật của phòng khám">
+            <div class="clinic-highlight"><span class="clinic-highlight-mark" aria-hidden="true">+</span><span>Đa dạng chuyên khoa, chăm sóc toàn diện</span></div>
+            <div class="clinic-highlight"><span class="clinic-highlight-mark" aria-hidden="true">✓</span><span>Đặt lịch trực tuyến thuận tiện</span></div>
+            <div class="clinic-highlight"><span class="clinic-highlight-mark" aria-hidden="true">♡</span><span>Tận tâm trong từng lần thăm khám</span></div>
+        </div>
+        <section class="banner-specialties" aria-labelledby="banner-specialties-heading">
+            <div class="banner-specialties-heading">
+                <div>
+                    <h2 id="banner-specialties-heading">Chuyên khoa tại MedCare</h2>
+                    <p>Chọn chuyên khoa để xem đội ngũ bác sĩ và thông tin khám.</p>
+                </div>
+            </div>
+            <div class="banner-specialty-grid">
+                <article class="banner-specialty-card" th:each="specialty : ${specialties}">
+                    <h3 th:text="${specialty.name}">Tên chuyên khoa</h3>
+                    <p class="banner-specialty-description"
+                       th:text="${specialty.description != null and !specialty.description.isBlank() ? specialty.description : 'Đội ngũ bác sĩ sẵn sàng tư vấn và thăm khám.'}">
+                        Mô tả chuyên khoa
+                    </p>
+                    <div class="banner-doctor-list" th:if="${!#lists.isEmpty(doctorsBySpecialty[specialty.id])}">
+                        <a class="banner-doctor-link" th:each="doctor : ${doctorsBySpecialty[specialty.id]}"
+                           th:href="@{/doctors/{id}(id=${doctor.id})}" th:text="${doctor.name}">Tên bác sĩ</a>
+                    </div>
+                    <p class="banner-specialty-description" th:if="${#lists.isEmpty(doctorsBySpecialty[specialty.id])}">
+                        Chưa có bác sĩ đang nhận lịch.
+                    </p>
+                    <a class="banner-specialty-filter"
+                       th:href="@{/doctors(specialtyId=${specialty.id}, q=${searchTerm}, sortBy=${selectedSortBy})}">
+                        Xem bác sĩ chuyên khoa <span aria-hidden="true">→</span>
+                    </a>
+                </article>
+            </div>
+        </section>
     </div>
-</header>
+</section>
 
 <section class="hero">
     <div class="container hero-content">
@@ -139,7 +188,7 @@
         <p class="hero-copy">Khám phá đội ngũ bác sĩ theo chuyên khoa, xem thông tin và chi phí tham khảo, rồi đặt lịch trực tuyến thuận tiện.</p>
         <div class="hero-links">
             <a class="button" href="#doctor-results">Khám phá bác sĩ <span aria-hidden="true">↓</span></a>
-            <a class="button secondary" th:href="@{/appointments/search}">Tra cứu lịch đã đặt</a>
+            <a class="button secondary" th:href="@{/register}">Tạo tài khoản bệnh nhân</a>
         </div>
     </div>
 </section>
@@ -148,7 +197,7 @@
     <div class="container">
         <section class="search-panel" aria-labelledby="search-heading">
             <h2 id="search-heading">Tìm bác sĩ</h2>
-            <form th:action="@{/doctors}" method="get" class="filter-form">
+            <form th:action="@{/doctors}" method="get" class="filter-form" id="doctor-filter-form">
                 <div class="field">
                     <label for="doctorSearch">Tên bác sĩ</label>
                     <input class="control" id="doctorSearch" name="q" type="search" maxlength="80"
@@ -178,66 +227,22 @@
 
             <div class="specialty-row" aria-label="Lọc nhanh theo chuyên khoa">
                 <span class="specialty-label">Phổ biến:</span>
-                <a class="chip" th:classappend="${selectedSpecialtyId == null} ? ' active' : ''"
+                <a class="chip" data-specialty-id=""
+                   th:classappend="${selectedSpecialtyId == null} ? 'active' : ''"
+                   th:attr="aria-current=${selectedSpecialtyId == null ? 'true' : null}"
                    th:href="@{/doctors(q=${searchTerm}, sortBy=${selectedSortBy})}">Tất cả</a>
                 <a class="chip" th:each="specialty : ${specialties}"
-                   th:classappend="${specialty.id == selectedSpecialtyId} ? ' active' : ''"
+                   th:attr="data-specialty-id=${specialty.id},aria-current=${specialty.id == selectedSpecialtyId ? 'true' : null}"
+                   th:classappend="${specialty.id == selectedSpecialtyId} ? 'active' : ''"
                    th:href="@{/doctors(specialtyId=${specialty.id}, q=${searchTerm}, sortBy=${selectedSortBy})}"
                    th:text="${specialty.name}">Chuyên khoa</a>
             </div>
         </section>
 
-        <section id="doctor-results" aria-labelledby="results-heading">
-            <div class="results-head">
-                <h2 id="results-heading">Đội ngũ bác sĩ</h2>
-                <p class="results-count" th:text="'Tìm thấy ' + ${doctors.totalElements} + ' bác sĩ'">Tìm thấy 0 bác sĩ</p>
-            </div>
-
-            <div class="doctor-grid" th:if="${!doctors.content.isEmpty()}">
-                <article class="doctor-card" th:each="doctor : ${doctors.content}">
-                    <div class="doctor-top">
-                        <div class="avatar" aria-hidden="true"
-                             th:text="${#strings.isEmpty(doctor.name) ? 'B' : #strings.substring(doctor.name, 0, 1)}">B</div>
-                        <div class="doctor-title">
-                            <h3 class="doctor-name" th:text="${doctor.name}">Tên bác sĩ</h3>
-                            <div class="doctor-degree" th:text="${doctor.degree != null ? doctor.degree : 'Bác sĩ chuyên khoa'}">Học vị</div>
-                        </div>
-                    </div>
-                    <span class="doctor-specialty" th:text="${doctor.specialty.name}">Chuyên khoa</span>
-                    <p class="doctor-bio" th:text="${doctor.bio != null && !doctor.bio.isBlank() ? doctor.bio : 'Thông tin giới thiệu sẽ được cập nhật.'}">Kinh nghiệm và chuyên môn</p>
-                    <div class="card-meta">
-                        <div>
-                            <span class="meta-label">Chi phí tham khảo</span>
-                            <span class="fee" th:if="${doctor.consultationFee != null}"
-                                  th:text="${#numbers.formatDecimal(doctor.consultationFee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">300.000 VNĐ</span>
-                            <span class="fee" th:if="${doctor.consultationFee == null}">Liên hệ</span>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <a class="button secondary" th:href="@{/doctors/{id}(id=${doctor.id})}">Thông tin</a>
-                        <a class="button" th:href="@{/appointments/book(doctorId=${doctor.id})}">Đặt lịch</a>
-                    </div>
-                </article>
-            </div>
-
-            <div class="empty" th:if="${doctors.content.isEmpty()}">
-                <div class="empty-icon" aria-hidden="true">⌕</div>
-                <h3>Chưa tìm thấy bác sĩ phù hợp</h3>
-                <p>Thử đổi từ khóa hoặc chọn một chuyên khoa khác.</p>
-                <a class="button secondary" th:href="@{/doctors}">Xem tất cả bác sĩ</a>
-            </div>
-
-            <nav class="pagination" th:if="${doctors.totalPages > 1}" aria-label="Phân trang danh sách bác sĩ">
-                <a th:if="${doctors.hasPrevious()}"
-                   th:href="@{/doctors(page=${doctors.number - 1}, specialtyId=${selectedSpecialtyId}, q=${searchTerm}, sortBy=${selectedSortBy})}"
-                   aria-label="Trang trước">‹</a>
-                <span class="current" aria-current="page"
-                      th:text="${doctors.number + 1} + ' / ' + ${doctors.totalPages}">1 / 1</span>
-                <a th:if="${doctors.hasNext()}"
-                   th:href="@{/doctors(page=${doctors.number + 1}, specialtyId=${selectedSpecialtyId}, q=${searchTerm}, sortBy=${selectedSortBy})}"
-                   aria-label="Trang sau">›</a>
-            </nav>
-        </section>
+        <div id="doctor-results" aria-live="polite" aria-busy="false">
+            <th:block th:replace="~{fragments/doctor-results :: content}"></th:block>
+        </div>
+        <p id="doctor-results-status" class="results-count" role="status" aria-live="polite"></p>
 
         <section class="trust-strip" aria-label="Thông tin dịch vụ">
             <div class="trust-item"><span class="trust-icon" aria-hidden="true">✓</span><div><strong>Đặt lịch trực tuyến</strong><span>Chọn bác sĩ và khung giờ phù hợp</span></div></div>
@@ -247,15 +252,86 @@
     </div>
 </main>
 
-<footer>
-    <div class="container footer-inner">
-        <span>© MedCare · Thông tin chi phí chỉ mang tính tham khảo.</span>
-        <nav class="footer-links" aria-label="Liên kết cuối trang">
-            <a th:href="@{/doctors}">Danh sách bác sĩ</a>
-            <a th:href="@{/appointments/book}">Đặt lịch khám</a>
-            <a th:href="@{/appointments/search}">Tra cứu lịch</a>
-        </nav>
-    </div>
-</footer>
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
+<th:block th:replace="~{fragments/clinic-assistant :: widget}"></th:block>
+<script>
+    (() => {
+        const form = document.getElementById("doctor-filter-form");
+        const resultsContainer = document.getElementById("doctor-results");
+        const status = document.getElementById("doctor-results-status");
+        if (!form || !resultsContainer || !status) return;
+
+        let activeRequest;
+
+        function syncFilters(url) {
+            form.elements.q.value = url.searchParams.get("q") || "";
+            form.elements.specialtyId.value = url.searchParams.get("specialtyId") || "";
+            form.elements.sortBy.value = url.searchParams.get("sortBy") || "name";
+            document.querySelectorAll(".specialty-row .chip").forEach(chip => {
+                const isActive = chip.dataset.specialtyId === form.elements.specialtyId.value;
+                chip.classList.toggle("active", isActive);
+                if (isActive) chip.setAttribute("aria-current", "true");
+                else chip.removeAttribute("aria-current");
+            });
+        }
+
+        async function loadResults(url, updateHistory) {
+            if (activeRequest) activeRequest.abort();
+            activeRequest = new AbortController();
+            resultsContainer.setAttribute("aria-busy", "true");
+            status.textContent = "Đang tải danh sách bác sĩ...";
+            const resultsUrl = new URL("/doctors/results", window.location.origin);
+            resultsUrl.search = url.search;
+
+            try {
+                const response = await fetch(resultsUrl, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    signal: activeRequest.signal
+                });
+                if (!response.ok) throw new Error("Không thể tải danh sách bác sĩ.");
+                const html = await response.text();
+                const parsed = new DOMParser().parseFromString(html, "text/html");
+                const updatedResults = parsed.getElementById("doctor-results-content");
+                if (!updatedResults) throw new Error("Dữ liệu danh sách bác sĩ không hợp lệ.");
+                resultsContainer.innerHTML = updatedResults.innerHTML;
+                resultsContainer.setAttribute("aria-busy", "false");
+                status.textContent = "";
+                syncFilters(url);
+                if (updateHistory) window.history.pushState({}, "", url.pathname + url.search + url.hash);
+            } catch (error) {
+                if (error.name !== "AbortError") {
+                    resultsContainer.setAttribute("aria-busy", "false");
+                    status.textContent = error.message;
+                }
+            }
+        }
+
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            const url = new URL(form.action, window.location.origin);
+            url.search = new URLSearchParams(new FormData(form)).toString();
+            loadResults(url, true);
+        });
+
+        form.elements.specialtyId.addEventListener("change", () => form.requestSubmit());
+        form.elements.sortBy.addEventListener("change", () => form.requestSubmit());
+
+        document.addEventListener("click", event => {
+            const link = event.target.closest(".specialty-row a, .banner-specialty-filter, .pagination a, .reset-link, .empty a");
+            if (!link || event.defaultPrevented || event.button !== 0
+                    || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault();
+            const targetUrl = new URL(link.href);
+            const shouldScrollToResults = targetUrl.hash === "#doctor-results"
+                    || link.classList.contains("banner-specialty-filter");
+            loadResults(targetUrl, true);
+            if (shouldScrollToResults) {
+                resultsContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+
+        window.addEventListener("popstate", () => loadResults(new URL(window.location.href), false));
+    })();
+</script>
 </body>
 </html>

@@ -1,16 +1,34 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Quản Lý Lịch Hẹn - MedCare Admin</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 25px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 0; }
         .admin-container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .calendar-section { margin: 0 0 26px; }
+        .calendar-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .calendar-toolbar h2 { margin: 0; color: #173b55; font-size: 20px; }
+        .calendar-nav { display: flex; align-items: center; gap: 8px; }
+        .calendar-nav a { padding: 8px 12px; border: 1px solid #dce7ec; border-radius: 7px; color: #315469; text-decoration: none; background: #fff; }
+        .calendar-grid-wrap { overflow-x: auto; border: 1px solid #e0e9ed; border-radius: 9px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); min-width: 840px; }
+        .calendar-weekday { padding: 10px; background: #f3f7f9; color: #61758a; font-size: 12px; font-weight: 800; text-align: center; border-bottom: 1px solid #e0e9ed; }
+        .calendar-day { min-height: 126px; padding: 8px; border-right: 1px solid #e8eef1; border-bottom: 1px solid #e8eef1; background: #fff; }
+        .calendar-day.outside-month { background: #f8fafb; color: #9aa8b1; }
+        .calendar-day.today { background: #f0f9fa; }
+        .calendar-date { margin: 0 0 7px; font-size: 12px; font-weight: 800; }
+        .calendar-event { margin: 4px 0; padding: 6px 7px; border-left: 3px solid #087e8b; border-radius: 4px; background: #edf7f7; color: #254256; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+        .calendar-event.status-CANCELLED { border-color: #aeb8bf; background: #f1f3f5; color: #65727b; }
+        .calendar-event.status-COMPLETED { border-color: #2474bc; background: #eef5fc; }
+        .calendar-event.status-CONFIRMED { border-color: #26834b; background: #eff8f1; }
+        button.calendar-event { width: calc(100% - 8px); text-align: left; font: inherit; cursor: pointer; }
+        .calendar-event:hover { filter: brightness(.97); box-shadow: 0 1px 5px #18344a20; }
+        .calendar-empty { padding: 18px; color: #718392; text-align: center; }
         h1 { color: #1a252f; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; }
         .badge-count { background: #0056b3; color: white; padding: 4px 12px; border-radius: 20px; font-size: 16px; }
 
-        /* Filter Section */
-        .filter-bar { background: #eef2f5; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .filter-bar { background: #eef2f5; padding: 15px 20px; border-radius: 8px; margin-bottom: 18px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .filter-group { display: flex; align-items: center; gap: 8px; }
         .filter-group label { font-weight: bold; font-size: 14px; color: #495057; }
         .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 5px; font-size: 14px; }
@@ -22,26 +40,30 @@
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-        /* Table Style */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e9ecef; }
-        th { background-color: #f8f9fa; color: #495057; font-weight: bold; font-size: 14px; }
-        tr:hover { background-color: #f1f3f5; }
-
-        /* Status Badge */
-        .status-badge { font-weight: bold; padding: 5px 12px; border-radius: 15px; font-size: 12px; display: inline-block; }
-        .status-PENDING { background: #fff3cd; color: #856404; }
-        .status-CONFIRMED { background: #d4edda; color: #155724; }
-        .status-CANCELLED { background: #f8d7da; color: #721c24; }
-        .status-COMPLETED { background: #cce5ff; color: #004085; }
-
-        .select-status { padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; }
         .btn-update { padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: bold; }
-
-        /* Pagination */
-        .pagination { display: flex; justify-content: center; gap: 8px; align-items: center; margin-top: 20px; }
-        .pagination a, .pagination span { padding: 6px 14px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #0056b3; }
-        .pagination span.active { background: #0056b3; color: white; border-color: #0056b3; }
+        .status-label { font-size: 12px; font-weight: 700; }
+        .appointment-dialog { width: min(620px, calc(100% - 32px)); max-height: min(85vh, 760px); padding: 0; border: 0; border-radius: 14px; color: #23384a; box-shadow: 0 20px 60px #102b3d55; }
+        .appointment-dialog::backdrop { background: #102b3d88; backdrop-filter: blur(2px); }
+        .dialog-content { padding: 24px; }
+        .dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+        .dialog-header h2 { margin: 0; color: #173b55; font-size: 21px; }
+        .dialog-close { border: 0; background: transparent; color: #61758a; font-size: 25px; cursor: pointer; }
+        .dialog-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+        .dialog-meta div { padding: 11px; border-radius: 7px; background: #f4f7f9; }
+        .dialog-meta dt { margin-bottom: 4px; color: #718392; font-size: 12px; }
+        .dialog-meta dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+        .dialog-section { padding-top: 15px; border-top: 1px solid #e8eef1; }
+        .dialog-section h3 { margin: 0 0 10px; color: #315469; font-size: 15px; }
+        .dialog-section form { display: flex; align-items: flex-start; gap: 9px; }
+        .dialog-section select, .dialog-section textarea { min-width: 0; padding: 9px; border: 1px solid #cfdbe1; border-radius: 6px; font: inherit; }
+        .dialog-section textarea { display: block; width: 100%; box-sizing: border-box; resize: vertical; }
+        .dialog-result { margin: 0; padding: 12px; border-radius: 7px; background: #f2f7fb; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .dialog-hint { margin: 8px 0 0; color: #718392; font-size: 12px; }
+        .dialog-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; }
+        .dialog-button { min-width: 100px; padding: 9px 15px; border: 0; border-radius: 6px; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+        .dialog-button.save { background: #28a745; }
+        .dialog-button.cancel { background: #6c757d; }
+        .dialog-warning { margin: 0 0 12px; padding: 10px 12px; border: 1px solid #f5c6cb; border-radius: 6px; background: #f8d7da; color: #721c24; font-size: 13px; line-height: 1.45; }
 
         .btn-logout {
             background-color: #dc3545;
@@ -61,143 +83,255 @@
             box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
             transform: translateY(-1px);
         }
+        @media(max-width: 900px) {
+            .calendar-day { min-height: 110px; }
+        }
+        @media(max-width: 620px) {
+            .calendar-toolbar { align-items: flex-start; flex-direction: column; }
+            .dialog-content { padding: 18px; }
+            .dialog-meta { grid-template-columns: 1fr; }
+            .dialog-section form { flex-direction: column; }
+            .dialog-section select, .dialog-section textarea, .dialog-section .btn-update { width: 100%; box-sizing: border-box; }
+        }
     </style>
+    <th:block th:replace="~{fragments/admin-layout :: styles}"></th:block>
 </head>
 <body>
 
+<header th:replace="~{fragments/admin-layout :: header}"></header>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/admin-layout :: sidebar}"></aside>
+    <div class="admin-main">
 <div class="admin-container">
     <h1>
         <span>📋 Quản Lý Danh Sách Lịch Hẹn Khám</span>
-        <span class="badge-count" th:text="'Tổng: ' + ${appointments.totalElements}">Tổng: 0</span>
+        <span class="badge-count" th:text="'Tổng: ' + ${appointmentCount}">Tổng: 0</span>
     </h1>
-    <div sec:authorize="hasAuthority('ROLE_ADMIN')" style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-        <a th:href="@{/admin/catalog/doctors}" style="color:#0056b3;font-weight:bold">Quản lý bác sĩ</a>
-        <a th:href="@{/admin/catalog/specialties}" style="color:#0056b3;font-weight:bold">Quản lý chuyên khoa</a>
-    </div>
 
-    <!-- Alert Message -->
+    <form th:action="@{/admin/appointments}" method="get" class="filter-bar">
+        <input type="hidden" name="month" th:value="${calendarMonth}" />
+        <div class="filter-group">
+            <label for="statusFilter">Trạng thái:</label>
+            <select id="statusFilter" name="status">
+                <option value="">-- Tất cả --</option>
+                <option th:each="st : ${statuses}" th:value="${st}"
+                        th:text="${st.name() == 'PENDING' ? 'Chờ xác nhận' : (st.name() == 'CONFIRMED' ? 'Đã xác nhận' : (st.name() == 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'))}"
+                        th:selected="${st == selectedStatus}"></option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="specialtyId">Chuyên khoa:</label>
+            <select id="specialtyId" name="specialtyId">
+                <option value="">Tất cả chuyên khoa</option>
+                <option th:each="specialty : ${specialties}" th:value="${specialty.id}"
+                        th:text="${specialty.name}" th:selected="${specialty.id == selectedSpecialtyId}"></option>
+            </select>
+        </div>
+        <button type="submit" class="btn-filter">Lọc lịch</button>
+        <a th:href="@{/admin/appointments(month=${calendarMonth})}" class="btn-reset">Đặt lại</a>
+    </form>
+
+    <section class="calendar-section" aria-label="Lịch hẹn theo tháng">
+        <div class="calendar-toolbar">
+            <h2 th:text="${calendarMonthLabel}">Lịch hẹn tháng</h2>
+            <div class="calendar-nav">
+                <a th:href="@{/admin/appointments(month=${previousMonth}, status=${selectedStatus}, specialtyId=${selectedSpecialtyId})}" aria-label="Tháng trước">‹ Trước</a>
+                <a th:href="@{/admin/appointments(month=${nextMonth}, status=${selectedStatus}, specialtyId=${selectedSpecialtyId})}" aria-label="Tháng sau">Sau ›</a>
+            </div>
+        </div>
+        <div class="calendar-grid-wrap">
+            <div class="calendar-grid">
+                <div class="calendar-weekday" th:each="weekday : ${ {'Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'} }"
+                     th:text="${weekday}">Thứ 2</div>
+                <section class="calendar-day" th:each="calendarDay : ${calendarDays}"
+                         th:classappend="${calendarDay.month != calendarMonth.month} ? ' outside-month' : (${calendarDay.equals(T(java.time.LocalDate).now())} ? ' today' : '')">
+                    <p class="calendar-date" th:text="${calendarDay.dayOfMonth}">1</p>
+                    <button type="button" class="calendar-event" th:each="event : ${appointmentsByDate[calendarDay.toString()]}"
+                            th:classappend="' status-' + ${event.status}"
+                            th:attr="data-id=${event.id},data-code=${event.bookingCode},data-patient=${event.patientName},
+                                     data-phone=${event.patientPhone},data-doctor=${event.doctor.name},
+                                     data-specialty=${event.doctor.specialty.name},
+                                     data-date=${#temporals.format(event.appointmentDate, 'dd/MM/yyyy')},
+                                     data-time=${event.timeSlot.displayText},data-status=${event.status},
+                                     data-result=${event.clinicalResult},
+                                     data-payment-status=${event.paymentStatus != null ? event.paymentStatus.displayName : 'Chưa thanh toán'},
+                                     data-payment-method=${event.paymentMethod != null ? event.paymentMethod.displayName : 'Tiền mặt tại quầy'},
+                                     data-payment-amount=${event.paymentAmount != null ? #numbers.formatDecimal(event.paymentAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : ''}">
+                        <strong th:text="${event.timeSlot.displayText}">08:00</strong>
+                        <span th:text="${event.doctor.name}">Bác sĩ</span><br>
+                        <span th:text="${event.patientName}">Bệnh nhân</span>
+                        <small class="status-label"
+                               th:text="${event.status.name() == 'PENDING' ? 'Chờ xác nhận' : (event.status.name() == 'CONFIRMED' ? 'Đã xác nhận' : (event.status.name() == 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'))}">Chờ xác nhận</small>
+                    </button>
+                </section>
+            </div>
+        </div>
+    </section>
+
     <div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
     <div th:if="${errorMsg}" class="alert alert-error" th:text="${errorMsg}"></div>
 
-    <!-- Filter Bar -->
-    <form th:action="@{/admin/appointments}" method="get" class="filter-bar">
-        <div class="filter-group">
-            <label>Trạng Thái:</label>
-            <select name="status">
-                <option value="">-- Tất cả --</option>
-                <option th:each="st : ${statuses}"
-                        th:value="${st}"
-                        th:text="${st}"
-                        th:selected="${st == selectedStatus}">
-                </option>
-            </select>
+    <dialog class="appointment-dialog" id="appointmentDialog" aria-labelledby="dialogTitle">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <div>
+                    <h2 id="dialogTitle">Thông tin lịch hẹn</h2>
+                    <span id="dialogBookingCode" class="result-meta"></span>
+                </div>
+                <button type="button" class="dialog-close" id="closeAppointmentDialog" aria-label="Đóng">×</button>
+            </div>
+            <form th:action="@{/admin/appointments/update-details}" method="post" id="appointmentDetailsForm"
+                  sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')">
+                <input type="hidden" name="id" id="detailsAppointmentId">
+                <input type="hidden" name="month" th:value="${calendarMonth}">
+                <input type="hidden" name="statusFilter" th:value="${selectedStatus}">
+                <input type="hidden" name="specialtyId" th:value="${selectedSpecialtyId}">
+                <input type="hidden" name="clinicalResultChanged" id="clinicalResultChanged" value="false">
+                <dl class="dialog-meta">
+                <div><dt>Bệnh nhân</dt><dd id="dialogPatient"></dd></div>
+                <div><dt>Số điện thoại</dt><dd id="dialogPhone"></dd></div>
+                <div><dt>Bác sĩ</dt><dd id="dialogDoctor"></dd></div>
+                <div><dt>Chuyên khoa</dt><dd id="dialogSpecialty"></dd></div>
+                <div><dt>Ngày khám</dt><dd id="dialogDate"></dd></div>
+                <div><dt>Khung giờ</dt><dd id="dialogTime"></dd></div>
+                <div>
+                    <dt>Trạng thái</dt>
+                    <dd>
+                        <span id="dialogStatus" sec:authorize="hasAuthority('ROLE_STAFF')"></span>
+                        <span id="dialogStatusReadOnly" sec:authorize="!hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')"></span>
+                        <span sec:authorize="hasAuthority('ROLE_ADMIN')">
+                            <select name="status" id="dialogStatusSelect" aria-label="Trạng thái lịch hẹn">
+                                <option th:each="st : ${statuses}" th:value="${st}"
+                                        th:text="${st.name() == 'PENDING' ? 'Chờ xác nhận' : (st.name() == 'CONFIRMED' ? 'Đã xác nhận' : (st.name() == 'CANCELLED' ? 'Đã hủy' : 'Đã hoàn thành'))}"></option>
+                            </select>
+                        </span>
+                    </dd>
+                </div>
+                <div><dt>Phí khám & Thanh toán</dt><dd id="dialogPayment"></dd></div>
+                </dl>
+                <div class="dialog-warning" id="statusWorkflowWarning" role="alert" tabindex="-1" hidden></div>
+                <div class="dialog-warning" th:if="${statusErrorMsg}" id="serverStatusWarning" role="alert"
+                     th:text="${statusErrorMsg}"></div>
+                <div class="dialog-warning" th:if="${modalErrorMsg}" id="modalErrorWarning" role="alert"
+                     th:text="${modalErrorMsg}"></div>
+                <section class="dialog-section">
+                    <h3>Kết quả khám & Chỉ định của Bác sĩ</h3>
+                    <p id="dialogResult" class="dialog-result" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 13px; color: #334155; line-height: 1.5;"></p>
+                    <p class="dialog-hint" style="color: #64748b; font-size: 12px; margin-top: 6px;">
+                        ℹ️ <em>Kết quả chẩn đoán và đơn thuốc do Bác sĩ phụ trách trực tiếp ghi nhận qua Cổng Bác Sĩ.</em>
+                    </p>
+                </section>
+            </form>
+            <div class="dialog-actions">
+                <button type="button" class="dialog-button cancel" id="dismissAppointmentDialog">Hủy</button>
+                <button type="submit" form="appointmentDetailsForm" class="dialog-button save"
+                        sec:authorize="hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF')">Lưu</button>
+            </div>
         </div>
-
-        <div class="filter-group">
-            <label>Ngày Khám:</label>
-            <input type="date" name="date" th:value="${selectedDate}" />
-        </div>
-
-        <div class="filter-group">
-            <label for="doctorName">Tên bác sĩ:</label>
-            <input id="doctorName" type="search" name="doctorName" maxlength="80"
-                   placeholder="Nhập tên bác sĩ" th:value="${doctorName}" />
-        </div>
-
-        <div class="filter-group">
-            <label for="sortBy">Sắp xếp:</label>
-            <select id="sortBy" name="sortBy">
-                <option value="createdDesc" th:selected="${selectedSortBy == 'createdDesc'}">Mới đặt trước</option>
-                <option value="createdAsc" th:selected="${selectedSortBy == 'createdAsc'}">Cũ trước</option>
-                <option value="doctorAsc" th:selected="${selectedSortBy == 'doctorAsc'}">Tên bác sĩ A - Z</option>
-                <option value="doctorDesc" th:selected="${selectedSortBy == 'doctorDesc'}">Tên bác sĩ Z - A</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-filter">Lọc Dữ Liệu</button>
-        <a th:href="@{/admin/appointments}" class="btn-reset">Đặt Lại</a>
-    </form>
-
-    <!-- Table -->
-    <table>
-        <thead>
-        <tr>
-            <th>Mã Lịch</th>
-            <th>Bệnh Nhân / SĐT</th>
-            <th>
-                <a th:href="@{/admin/appointments(status=${selectedStatus}, date=${selectedDate}, doctorName=${doctorName}, sortBy=${selectedSortBy == 'doctorAsc' ? 'doctorDesc' : 'doctorAsc'})}"
-                   style="color: inherit; text-decoration: none;">Bác Sĩ Khám ↕</a>
-            </th>
-            <th>Ngày & Khung Giờ</th>
-            <th>Trạng Thái</th>
-            <th sec:authorize="hasAuthority('ROLE_ADMIN')">Hành Động (Cập Nhật)</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="app : ${appointments.content}">
-            <td style="font-weight: bold; color: #0056b3;" th:text="${app.bookingCode}">MC-XXXXX</td>
-            <td>
-                <div style="font-weight: bold;" th:text="${app.patientName}">Nguyễn Văn A</div>
-                <div style="font-size: 13px; color: #6c757d;" th:text="${app.patientPhone}">0912345678</div>
-            </td>
-            <td>
-                <div th:text="${app.doctor.name}">BS. Nguyễn Văn B</div>
-                <div style="font-size: 12px; color: #0056b3;" th:text="${app.doctor.specialty.name}">Nhi Khoa</div>
-            </td>
-            <td>
-                <div style="font-weight: bold;" th:text="${#temporals.format(app.appointmentDate, 'dd/MM/yyyy')}">20/10/2026</div>
-                <div style="font-size: 12px; color: #28a745;" th:text="${app.timeSlot.displayText}">08:00 - 08:30</div>
-            </td>
-            <td>
-                <span th:text="${app.status}" th:class="'status-badge status-' + ${app.status}">PENDING</span>
-            </td>
-            <td sec:authorize="hasAuthority('ROLE_ADMIN')">
-                <form th:action="@{/admin/appointments/update-status}" method="post" style="display: flex; gap: 5px; align-items: center;">
-                    <input type="hidden" name="id" th:value="${app.id}" />
-                    <select name="status" class="select-status">
-                        <option th:each="st : ${statuses}"
-                                th:value="${st}"
-                                th:text="${st}"
-                                th:selected="${st == app.status}">
-                        </option>
-                    </select>
-                    <button type="submit" class="btn-update">Lưu</button>
-                </form>
-            </td>
-        </tr>
-        <tr th:if="${appointments.content.isEmpty()}">
-            <td colspan="6" sec:authorize="hasAuthority('ROLE_ADMIN')" style="text-align: center; color: #6c757d; padding: 30px;">
-                Không tìm thấy dữ liệu phiếu khám nào phù hợp.
-            </td>
-            <td colspan="5" sec:authorize="hasAuthority('ROLE_STAFF')" style="text-align: center; color: #6c757d; padding: 30px;">
-                Không tìm thấy dữ liệu phiếu khám nào phù hợp.
-            </td>
-        </tr>
-        </tbody>
-    </table>
-
-    <!-- Logout -->
-    <form th:action="@{/logout}" method="post" style="margin-top: 20px; text-align: right;">
-        <button type="submit" class="btn-logout">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: -2px; margin-right: 5px;">
-                <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 1h-8A1.5 1.5 0 0 0 0 2.5v9A1.5 1.5 0 0 0 1.5 13h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-                <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
-            </svg>
-            Đăng xuất
-        </button>
-    </form>
-
-    <!-- Pagination -->
-    <div class="pagination" th:if="${appointments.totalPages > 1}">
-        <a th:if="${appointments.hasPrevious()}"
-           th:href="@{/admin/appointments(page=${appointments.number - 1}, status=${selectedStatus}, date=${selectedDate}, doctorName=${doctorName}, sortBy=${selectedSortBy})}">← Trang trước</a>
-
-        <span class="active" th:text="${appointments.number + 1} + ' / ' + ${appointments.totalPages}">1 / 1</span>
-
-        <a th:if="${appointments.hasNext()}"
-           th:href="@{/admin/appointments(page=${appointments.number + 1}, status=${selectedStatus}, date=${selectedDate}, doctorName=${doctorName}, sortBy=${selectedSortBy})}">Trang sau →</a>
-    </div>
+    </dialog>
 </div>
+</div>
+</div>
+<footer th:replace="~{fragments/admin-layout :: footer}"></footer>
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dialog = document.getElementById('appointmentDialog');
+        const resultInput = document.getElementById('dialogResultInput');
+        const detailsForm = document.getElementById('appointmentDetailsForm');
+        const statusSelect = document.getElementById('dialogStatusSelect');
+        const resultHint = document.getElementById('resultHint');
+        const workflowWarning = document.getElementById('statusWorkflowWarning');
+        const changedResultInput = document.getElementById('clinicalResultChanged');
+        const statusLabels = {
+            PENDING: 'Chờ xác nhận',
+            CONFIRMED: 'Đã xác nhận',
+            CANCELLED: 'Đã hủy',
+            COMPLETED: 'Đã hoàn thành'
+        };
+        let currentStatus = null;
+        let originalResult = '';
+
+        function refreshResultAvailability() {
+            // Read-only in Admin view
+        }
+
+        function closeDialog() {
+            dialog.close();
+        }
+        document.getElementById('closeAppointmentDialog').addEventListener('click', closeDialog);
+        document.getElementById('dismissAppointmentDialog').addEventListener('click', closeDialog);
+        if (detailsForm) {
+            detailsForm.addEventListener('submit', event => {
+                const targetStatus = statusSelect ? statusSelect.value : currentStatus;
+                const allowedTransitions = {
+                    PENDING: ['CONFIRMED', 'CANCELLED'],
+                    CONFIRMED: ['COMPLETED', 'CANCELLED'],
+                    CANCELLED: [],
+                    COMPLETED: []
+                };
+                if (statusSelect && targetStatus !== currentStatus
+                        && !(allowedTransitions[currentStatus] || []).includes(targetStatus)) {
+                    event.preventDefault();
+                    const targets = allowedTransitions[currentStatus] || [];
+                    workflowWarning.textContent = targets.length
+                        ? `Không thể chuyển từ "${statusLabels[currentStatus]}" sang "${statusLabels[targetStatus]}". Luồng hợp lệ: ${targets.map(status => statusLabels[status]).join(' hoặc ')}.`
+                        : `Lịch "${statusLabels[currentStatus]}" không thể chuyển sang trạng thái khác.`;
+                    workflowWarning.hidden = false;
+                    workflowWarning.focus();
+                } else {
+                    workflowWarning.hidden = true;
+                }
+                if (!event.defaultPrevented && resultInput && changedResultInput) {
+                    const resultAllowed = !statusSelect || statusSelect.value === 'COMPLETED';
+                    changedResultInput.value = String(resultAllowed && resultInput.value !== originalResult);
+                }
+            });
+        }
+        if (statusSelect) statusSelect.addEventListener('change', refreshResultAvailability);
+        dialog.addEventListener('click', event => {
+            if (event.target === dialog) closeDialog();
+        });
+        document.querySelectorAll('.calendar-event').forEach(eventButton => {
+            eventButton.addEventListener('click', () => {
+                const data = eventButton.dataset;
+                currentStatus = data.status;
+                document.getElementById('dialogTitle').textContent = data.patient || 'Lịch hẹn';
+                document.getElementById('dialogBookingCode').textContent = `Mã lịch: ${data.code}`;
+                document.getElementById('dialogPatient').textContent = data.patient || '—';
+                document.getElementById('dialogPhone').textContent = data.phone || '—';
+                document.getElementById('dialogDoctor').textContent = data.doctor || '—';
+                document.getElementById('dialogSpecialty').textContent = data.specialty || '—';
+                document.getElementById('dialogDate').textContent = data.date || '—';
+                document.getElementById('dialogTime').textContent = data.time || '—';
+                const paymentInfo = (data.paymentAmount ? data.paymentAmount + ' • ' : '') + (data.paymentStatus || 'Chưa thanh toán') + (data.paymentMethod ? ' (' + data.paymentMethod + ')' : '');
+                const paymentElem = document.getElementById('dialogPayment');
+                if (paymentElem) paymentElem.textContent = paymentInfo;
+                const statusText = document.getElementById('dialogStatus');
+                if (statusText) statusText.textContent = statusLabels[data.status] || data.status;
+                document.getElementById('dialogResult').textContent = data.result && data.result.trim() ? data.result : 'Bác sĩ chưa ghi nhận kết quả khám.';
+                if (detailsForm) {
+                    detailsForm.querySelector('#detailsAppointmentId').value = data.id;
+                }
+                if (statusSelect) {
+                    statusSelect.value = data.status;
+                }
+                refreshResultAvailability();
+                document.getElementById('dialogResult').hidden =
+                    data.status === 'COMPLETED' && Boolean(data.result);
+                if (workflowWarning) {
+                    workflowWarning.hidden = true;
+                    workflowWarning.textContent = '';
+                }
+                dialog.showModal();
+            });
+        });
+        const appointmentToReopen = new URLSearchParams(window.location.search).get('appointmentId');
+        if (appointmentToReopen) {
+            const eventButton = document.querySelector(`.calendar-event[data-id="${appointmentToReopen}"]`);
+            if (eventButton) eventButton.click();
+        }
+    });
+</script>
 </body>
 </html>

@@ -13,6 +13,9 @@ public interface IUserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
     Optional<User> findByDoctorId(Long doctorId);
+    Optional<User> findByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
+    Optional<User> findByEmailIgnoreCase(String email);
 
     @EntityGraph(attributePaths = "doctor")
     Optional<User> findWithDoctorByUsername(String username);

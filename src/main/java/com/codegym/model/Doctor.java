@@ -25,6 +25,9 @@ public class Doctor {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -60,6 +63,9 @@ public class Doctor {
 
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }

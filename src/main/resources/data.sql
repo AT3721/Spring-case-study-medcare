@@ -2,7 +2,8 @@
 INSERT INTO roles (id, name) VALUES
                                  (1, 'ROLE_ADMIN'),
                                  (2, 'ROLE_STAFF'),
-                                 (3, 'ROLE_PATIENT')
+                                 (3, 'ROLE_PATIENT'),
+                                 (4, 'ROLE_DOCTOR')
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 /*-- 2. Insert Users (Password 123456 chuẩn BCrypt)
@@ -32,17 +33,9 @@ INSERT INTO doctors (id, name, degree, consultation_fee, bio, specialty_id) VALU
                                                                                 (3, 'TS. BS Phạm Hoàng Nam', 'Tiến sĩ Y Khoa', 500000.00, 'Trưởng khoa Da liễu, chuyên sâu về điều trị mụn nội tiết và phục hồi da tổn thương.', 3),
                                                                                 (4, 'BS. CKII Đặng Quốc Bảo', 'Bác sĩ CKII', 450000.00, 'Nguyên Phó khoa Tim mạch, chuyên gia về điều trị tăng huyết áp và rối loạn nhịp tim.', 4),
                                                                                 (5, 'BS. Nguyễn Minh Khôi', 'Bác sĩ CKI', 320000.00, 'Bác sĩ mẫu chuyên khám viêm tai giữa, viêm xoang và các bệnh lý đường hô hấp trên.', 1),
-                                                                                (6, 'ThS. BS Trần Ngọc Lan', 'Thạc sĩ Y khoa', 380000.00, 'Bác sĩ mẫu có kinh nghiệm tư vấn sức khỏe tai mũi họng cho người lớn và trẻ em.', 1),
-                                                                                (7, 'BS. Lê Hoàng Phúc', 'Bác sĩ CKI', 300000.00, 'Bác sĩ mẫu chuyên khám và tư vấn các bệnh lý tai mũi họng thường gặp.', 1),
                                                                                 (8, 'BS. CKI Phạm Thu Hà', 'Bác sĩ CKI', 360000.00, 'Bác sĩ mẫu chuyên theo dõi sức khỏe trẻ em, tiêm chủng và tư vấn dinh dưỡng.', 2),
-                                                                                (9, 'ThS. BS Nguyễn Gia Hân', 'Thạc sĩ Y khoa', 420000.00, 'Bác sĩ mẫu chuyên khám nhi tổng quát và theo dõi phát triển cho trẻ nhỏ.', 2),
-                                                                                (10, 'BS. Trần Quốc Huy', 'Bác sĩ Nhi khoa', 330000.00, 'Bác sĩ mẫu tư vấn các bệnh hô hấp, tiêu hóa và chăm sóc sức khỏe trẻ em.', 2),
                                                                                 (11, 'BS. CKI Võ Thanh Thảo', 'Bác sĩ CKI', 400000.00, 'Bác sĩ mẫu chuyên khám các bệnh da liễu phổ biến và tư vấn chăm sóc da.', 3),
-                                                                                (12, 'ThS. BS Đỗ Anh Tuấn', 'Thạc sĩ Y khoa', 480000.00, 'Bác sĩ mẫu tư vấn điều trị mụn, viêm da và các vấn đề da liễu thường gặp.', 3),
-                                                                                (13, 'BS. Nguyễn Bảo Trâm', 'Bác sĩ Da liễu', 390000.00, 'Bác sĩ mẫu chuyên tư vấn chăm sóc da và theo dõi các bệnh da liễu.', 3),
-                                                                                (14, 'BS. CKI Phan Đức Long', 'Bác sĩ CKI', 430000.00, 'Bác sĩ mẫu chuyên khám tim mạch, tư vấn kiểm soát huyết áp và sức khỏe tim.', 4),
-                                                                                (15, 'ThS. BS Lương Mai Phương', 'Thạc sĩ Y khoa', 490000.00, 'Bác sĩ mẫu chuyên theo dõi bệnh tim mạch và tư vấn phòng ngừa nguy cơ tim mạch.', 4),
-                                                                                (16, 'BS. Nguyễn Thành Đạt', 'Bác sĩ Tim mạch', 410000.00, 'Bác sĩ mẫu tư vấn rối loạn nhịp tim, huyết áp và lối sống bảo vệ sức khỏe tim.', 4)
+                                                                                (14, 'BS. CKI Phan Đức Long', 'Bác sĩ CKI', 430000.00, 'Bác sĩ mẫu chuyên khám tim mạch, tư vấn kiểm soát huyết áp và sức khỏe tim.', 4)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- 4. Insert TimeSlots

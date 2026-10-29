@@ -35,6 +35,9 @@ public class User {
     @JoinColumn(name = "doctor_id", unique = true)
     private Doctor doctor;
 
+    @Column(name = "email", length = 100)
+    private String email;
+
     public User() {}
 
     public User(String username, String password, String fullName) {
@@ -64,4 +67,7 @@ public class User {
 
     public Doctor getDoctor() { return doctor; }
     public void setDoctor(Doctor doctor) { this.doctor = doctor; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

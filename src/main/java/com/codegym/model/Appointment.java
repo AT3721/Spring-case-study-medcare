@@ -34,8 +34,28 @@ public class Appointment {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "clinical_result", columnDefinition = "TEXT")
+    private String clinicalResult;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20)
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", length = 20)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
+
+    @Column(name = "payment_amount", precision = 10, scale = 2)
+    private java.math.BigDecimal paymentAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "payment_transaction_no", length = 50)
+    private String paymentTransactionNo;
+
+    @Column(name = "payment_time")
+    private LocalDateTime paymentTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", nullable = false)
@@ -45,6 +65,10 @@ public class Appointment {
     @JoinColumn(name = "time_slot_id", nullable = false)
     private TimeSlot timeSlot;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_user_id")
+    private User patientAccount;
+
     public Appointment() {
         this.createdAt = LocalDateTime.now();
     }
@@ -53,6 +77,19 @@ public class Appointment {
     protected void onCreate() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
+        }
+        if (this.paymentMethod == null) {
+            this.paymentMethod = PaymentMethod.CASH;
+        }
+        if (this.paymentStatus == null) {
+            this.paymentStatus = PaymentStatus.UNPAID;
+        }
+        if (this.paymentAmount == null || this.paymentAmount.compareTo(java.math.BigDecimal.ZERO) == 0) {
+            if (this.doctor != null && this.doctor.getConsultationFee() != null) {
+                this.paymentAmount = this.doctor.getConsultationFee();
+            } else if (this.paymentAmount == null) {
+                this.paymentAmount = java.math.BigDecimal.ZERO;
+            }
         }
     }
 
@@ -89,4 +126,25 @@ public class Appointment {
 
     public TimeSlot getTimeSlot() { return timeSlot; }
     public void setTimeSlot(TimeSlot timeSlot) { this.timeSlot = timeSlot; }
+
+    public String getClinicalResult() { return clinicalResult; }
+    public void setClinicalResult(String clinicalResult) { this.clinicalResult = clinicalResult; }
+
+    public User getPatientAccount() { return patientAccount; }
+    public void setPatientAccount(User patientAccount) { this.patientAccount = patientAccount; }
+
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(PaymentMethod paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public java.math.BigDecimal getPaymentAmount() { return paymentAmount; }
+    public void setPaymentAmount(java.math.BigDecimal paymentAmount) { this.paymentAmount = paymentAmount; }
+
+    public String getPaymentTransactionNo() { return paymentTransactionNo; }
+    public void setPaymentTransactionNo(String paymentTransactionNo) { this.paymentTransactionNo = paymentTransactionNo; }
+
+    public LocalDateTime getPaymentTime() { return paymentTime; }
+    public void setPaymentTime(LocalDateTime paymentTime) { this.paymentTime = paymentTime; }
 }

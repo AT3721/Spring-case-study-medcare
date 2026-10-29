@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${editing ? 'Cập nhật bác sĩ' : 'Thêm bác sĩ'} + ' | MedCare'">Hồ sơ bác sĩ</title>
     <style>
-        body { margin: 0; padding: 28px; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
+        body { margin: 0; padding: 0; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
         main { max-width: 760px; margin: auto; padding: 28px; border-radius: 12px; background: white; box-shadow: 0 5px 22px #18344a12; }
         h1 { margin-top: 0; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -15,6 +15,8 @@
         textarea { min-height: 110px; resize: vertical; }
         .error { display: block; margin-top: 5px; color: #b4232c; font-size: 12px; }
         .notice { padding: 12px; border-radius: 7px; background: #edf6f7; color: #315969; font-size: 13px; }
+        .image-preview { display: block; width: 120px; height: 120px; margin-top: 10px; border-radius: 12px; object-fit: cover; background: #edf6f7; }
+        .help { display: block; margin-top: 5px; color: #61758a; font-size: 12px; }
         .check { display: flex; align-items: center; gap: 8px; }
         .check input { width: auto; }
         .buttons { display: flex; gap: 10px; margin-top: 20px; }
@@ -22,8 +24,13 @@
         .secondary { background: #eaf2f5; color: #254256; }
         @media(max-width: 600px) { body { padding: 12px; } main { padding: 18px; } .grid { grid-template-columns: 1fr; gap: 0; } }
     </style>
+    <th:block th:replace="~{fragments/admin-layout :: styles}"></th:block>
 </head>
 <body>
+<header th:replace="~{fragments/admin-layout :: header}"></header>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/admin-layout :: sidebar}"></aside>
+    <div class="admin-main">
 <main>
     <h1 th:text="${editing ? 'Cập nhật hồ sơ bác sĩ' : 'Thêm bác sĩ mới'}">Hồ sơ bác sĩ</h1>
     <p class="notice">Tài khoản bác sĩ sử dụng quyền STAFF: được xem danh sách tất cả lịch hẹn nhưng không thể cập nhật trạng thái. Mật khẩu tối thiểu 12 ký tự; với tài khoản đã có, để trống để giữ mật khẩu hiện tại.</p>
@@ -59,6 +66,15 @@
             <label for="bio">Giới thiệu / kinh nghiệm</label>
             <textarea id="bio" th:field="*{bio}"></textarea>
         </div>
+        <div class="field">
+            <label for="imageUrl">Ảnh đại diện</label>
+            <input id="imageUrl" th:field="*{imageUrl}" maxlength="500"
+                   placeholder="/images/doctors/male-doctor-1.jpg">
+            <span class="help">Nhập đường dẫn ảnh trong thư mục static/images/doctors.</span>
+            <span class="error" th:errors="*{imageUrl}"></span>
+            <img id="imagePreview" class="image-preview" th:if="${doctorForm.imageUrl != null and !doctorForm.imageUrl.isBlank()}"
+                 th:src="${doctorForm.imageUrl}" alt="Ảnh xem trước bác sĩ">
+        </div>
         <div class="grid">
             <div class="field">
                 <label for="username">Tên đăng nhập bác sĩ</label>
@@ -82,5 +98,28 @@
         </div>
     </form>
 </main>
+</div>
+</div>
+<footer th:replace="~{fragments/admin-layout :: footer}"></footer>
+<script>
+    const imageUrlInput = document.getElementById('imageUrl');
+    let imagePreview = document.getElementById('imagePreview');
+    imageUrlInput.addEventListener('input', () => {
+        const url = imageUrlInput.value.trim();
+        if (!imagePreview && !url) return;
+        if (!imagePreview && url) {
+            imagePreview = document.createElement('img');
+            imagePreview.id = 'imagePreview';
+            imagePreview.className = 'image-preview';
+            imagePreview.alt = 'Ảnh xem trước bác sĩ';
+            imageUrlInput.parentElement.append(imagePreview);
+            imagePreview.src = url;
+        } else if (url) {
+            imagePreview.src = url;
+        } else {
+            imagePreview.remove();
+        }
+    });
+</script>
 </body>
 </html>

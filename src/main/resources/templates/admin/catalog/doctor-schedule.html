@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lịch làm việc bác sĩ | MedCare</title>
     <style>
-        body { margin: 0; padding: 28px; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
+        body { margin: 0; padding: 0; background: #f4f7f9; color: #23384a; font-family: "Segoe UI", Arial, sans-serif; }
         main { max-width: 1100px; margin: auto; padding: 26px; border-radius: 12px; background: #fff; box-shadow: 0 5px 22px #18344a12; }
         h1 { margin: 0 0 8px; }
         .hint { color: #5c7181; margin: 0 0 22px; }
@@ -21,22 +21,30 @@
         .period { padding: 12px; border-radius: 8px; background: #f8fafb; }
         .period + .period { margin-top: 12px; }
         .period-title { margin: 0 0 9px; color: #526b7a; font-size: 13px; font-weight: 700; }
-        .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; }
-        .slot { display: flex; align-items: center; gap: 7px; padding: 8px; border-radius: 6px; background: #fff; }
+        .shifts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .shift { display: flex; min-height: 72px; align-items: center; gap: 12px; padding: 15px; border: 1px solid #e2eaee; border-radius: 8px; background: #fff; cursor: pointer; }
+        .shift input { width: 18px; height: 18px; }
+        .shift strong { display: block; color: #28475b; }
+        .shift span { color: #718392; font-size: 12px; }
         input { accent-color: #087e8b; }
         .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
         .button { display: inline-block; padding: 10px 15px; border: 0; border-radius: 7px; background: #087e8b; color: #fff; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
         .secondary { background: #eaf2f5; color: #254256; }
-        @media(max-width: 700px) { body { padding: 12px; } main { padding: 17px; } }
+        @media(max-width: 700px) { body { padding: 12px; } main { padding: 17px; } .shifts { grid-template-columns: 1fr; } }
     </style>
+    <th:block th:replace="~{fragments/admin-layout :: styles}"></th:block>
 </head>
 <body>
+<header th:replace="~{fragments/admin-layout :: header}"></header>
+<div class="admin-shell">
+    <aside th:replace="~{fragments/admin-layout :: sidebar}"></aside>
+    <div class="admin-main">
 <main>
     <h1>Lịch làm việc</h1>
     <p class="hint">
         <strong th:text="${doctor.name}">Tên bác sĩ</strong>
-        — chọn các ca bác sĩ nhận khám lặp lại theo từng ngày trong tuần.
-        Bác sĩ chưa có ca nào được chọn sẽ không nhận lịch đặt mới.
+        — chọn ca sáng và/hoặc ca chiều lặp lại theo từng ngày trong tuần.
+        Khi bệnh nhân đặt lịch, các khung giờ cụ thể trong ca đã chọn sẽ được mở.
     </p>
     <div class="alert" th:if="${successMsg}" th:text="${successMsg}"></div>
     <div class="alert error" th:if="${errorMsg}" th:text="${errorMsg}"></div>
@@ -45,34 +53,26 @@
             <section class="day" th:each="day : ${days}">
                 <div class="day-header">
                     <h2 th:text="${dayLabels[day.name()]}">Thứ 2</h2>
-                    <div class="quick-actions" aria-label="Chọn nhanh ca khám">
+                    <div class="quick-actions" aria-label="Chọn nhanh ca làm">
                         <button class="quick-button" type="button" data-select-period="morning">Chọn sáng</button>
                         <button class="quick-button" type="button" data-select-period="afternoon">Chọn chiều</button>
-                        <button class="quick-button" type="button" data-select-period="all">Chọn tất cả</button>
-                        <button class="quick-button" type="button" data-select-period="none">Bỏ chọn</button>
+                        <button class="quick-button" type="button" data-select-period="all">Chọn cả ngày</button>
+                        <button class="quick-button" type="button" data-select-period="none">Nghỉ ngày này</button>
                     </div>
                 </div>
-                <div class="period">
-                    <h3 class="period-title">Ca sáng</h3>
-                    <div class="slots">
-                        <label class="slot" th:each="slot : ${timeSlots}" th:if="${slot.startTime.hour < 12}">
-                            <input type="checkbox" name="slotSelections" data-period="morning"
-                                   th:value="${day.name() + '-' + slot.id}"
-                                   th:checked="${selectedSlots.contains(day.name() + '-' + slot.id)}">
-                            <span th:text="${slot.displayText}">08:00</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="period">
-                    <h3 class="period-title">Ca chiều</h3>
-                    <div class="slots">
-                        <label class="slot" th:each="slot : ${timeSlots}" th:if="${slot.startTime.hour >= 12}">
-                            <input type="checkbox" name="slotSelections" data-period="afternoon"
-                                   th:value="${day.name() + '-' + slot.id}"
-                                   th:checked="${selectedSlots.contains(day.name() + '-' + slot.id)}">
-                            <span th:text="${slot.displayText}">13:00</span>
-                        </label>
-                    </div>
+                <div class="shifts">
+                    <label class="shift">
+                        <input type="checkbox" name="shiftSelections" data-period="morning"
+                               th:value="${day.name() + '-MORNING'}"
+                               th:checked="${selectedShifts.contains(day.name() + '-MORNING')}">
+                        <span><strong>Ca sáng</strong><span>08:00–12:00</span></span>
+                    </label>
+                    <label class="shift">
+                        <input type="checkbox" name="shiftSelections" data-period="afternoon"
+                               th:value="${day.name() + '-AFTERNOON'}"
+                               th:checked="${selectedShifts.contains(day.name() + '-AFTERNOON')}">
+                        <span><strong>Ca chiều</strong><span>13:00–17:00</span></span>
+                    </label>
                 </div>
             </section>
         </div>
@@ -82,12 +82,15 @@
         </div>
     </form>
 </main>
+</div>
+</div>
+<footer th:replace="~{fragments/admin-layout :: footer}"></footer>
 <script>
     document.querySelectorAll(".day").forEach(dayCard => {
         dayCard.querySelectorAll("[data-select-period]").forEach(button => {
             button.addEventListener("click", () => {
                 const period = button.dataset.selectPeriod;
-                dayCard.querySelectorAll('input[name="slotSelections"]').forEach(checkbox => {
+                dayCard.querySelectorAll('input[name="shiftSelections"]').forEach(checkbox => {
                     if (period === "none") {
                         checkbox.checked = false;
                     } else if (period === "all" || checkbox.dataset.period === period) {

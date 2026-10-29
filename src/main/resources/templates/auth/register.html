@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đăng ký tài khoản bệnh nhân | MedCare</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 20px; background: #f3f8fa; font-family: "Segoe UI", Arial, sans-serif; color: #17324d; }
+        .register-card { width: min(100%, 480px); padding: 32px; border: 1px solid #dce7ec; border-radius: 16px; background: #fff; box-shadow: 0 12px 32px rgba(22,56,78,.08); }
+        h1 { margin: 0 0 8px; color: #06636e; font-size: 27px; }
+        .intro { margin: 0 0 24px; color: #61758a; line-height: 1.6; }
+        .form-group { margin: 16px 0; }
+        label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700; }
+        input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid #cbd9e0; border-radius: 8px; font: inherit; }
+        input:focus { outline: 3px solid rgba(8,126,139,.18); border-color: #087e8b; }
+        .field-error { display: block; margin-top: 5px; color: #b42318; font-size: 13px; }
+        .global-error { margin: 12px 0; color: #b42318; font-size: 14px; }
+        .submit { width: 100%; min-height: 46px; margin-top: 8px; border: 0; border-radius: 8px; background: #087e8b; color: white; font: inherit; font-weight: 750; cursor: pointer; }
+        .links { margin: 20px 0 0; color: #61758a; font-size: 14px; text-align: center; }
+        a { color: #06636e; font-weight: 700; }
+    </style>
+</head>
+<body>
+<main class="register-card">
+    <h1>Tạo tài khoản bệnh nhân</h1>
+    <p class="intro">Đăng ký để lưu lịch hẹn và xem lại kết quả khám trong tài khoản MedCare.</p>
+    <form th:action="@{/register}" th:object="${registrationForm}" method="post">
+        <div class="form-group">
+            <label for="fullName">Họ và tên</label>
+            <input id="fullName" type="text" th:field="*{fullName}" autocomplete="name" required>
+            <span class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input id="email" type="email" th:field="*{email}" autocomplete="email" maxlength="50" required>
+            <span class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+        </div>
+        <div class="form-group">
+            <label for="password">Mật khẩu</label>
+            <input id="password" type="password" th:field="*{password}" autocomplete="new-password" minlength="8" maxlength="64" required>
+            <span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+        </div>
+        <div class="form-group">
+            <label for="confirmPassword">Xác nhận mật khẩu</label>
+            <input id="confirmPassword" type="password" th:field="*{confirmPassword}" autocomplete="new-password" required>
+            <span class="field-error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></span>
+        </div>
+        <div class="global-error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
+        <button class="submit" type="submit">Tạo tài khoản</button>
+    </form>
+    <p class="links">Đã có tài khoản? <a th:href="@{/login}">Đăng nhập</a></p>
+</main>
+</body>
+</html>

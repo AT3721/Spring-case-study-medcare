@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kết Quả Thanh Toán - MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f8fa; margin: 0; padding: 0; color: #17324d; }
+        .payment-container { width: min(620px, calc(100% - 32px)); margin: 40px auto; background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(18, 48, 74, 0.08); overflow: hidden; }
+        .header-status { padding: 34px 24px 24px; text-align: center; }
+        .header-status.success { background: linear-gradient(135deg, #e8f8f0 0%, #d1f2e1 100%); color: #155724; border-bottom: 2px solid #b8e8ce; }
+        .header-status.failed { background: linear-gradient(135deg, #fff3f3 0%, #fee2e2 100%); color: #991b1b; border-bottom: 2px solid #fecaca; }
+        .status-icon { display: inline-flex; width: 64px; height: 64px; border-radius: 50%; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 12px; }
+        .header-status.success .status-icon { background: #22c55e; color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35); }
+        .header-status.failed .status-icon { background: #ef4444; color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35); }
+        .header-status h1 { margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+        .header-status p { margin: 0; font-size: 15px; opacity: 0.9; }
+
+        .payment-body { padding: 28px; }
+        .amount-box { text-align: center; margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1; }
+        .amount-label { font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .amount-value { font-size: 30px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+
+        .details-list { list-style: none; padding: 0; margin: 0 0 24px; border-top: 1px solid #f1f5f9; }
+        .details-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .details-label { color: #64748b; font-weight: 500; }
+        .details-value { font-weight: 700; color: #1e293b; text-align: right; }
+        .badge-code { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.5px; font-family: monospace; font-size: 15px; }
+
+        .sandbox-tip { background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 14px; margin-bottom: 24px; font-size: 13px; color: #854d0e; }
+        .sandbox-tip strong { display: block; margin-bottom: 4px; color: #713f12; }
+
+        .action-group { display: flex; flex-direction: column; gap: 10px; }
+        .btn-action { display: block; text-align: center; padding: 13px 20px; border-radius: 8px; font-weight: 700; font-size: 15px; text-decoration: none; cursor: pointer; border: none; }
+        .btn-primary { background: #087e8b; color: white; }
+        .btn-primary:hover { background: #06646f; }
+        .btn-retry { background: #f59e0b; color: white; }
+        .btn-retry:hover { background: #d97706; }
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
+
+<main class="payment-container">
+    <div class="header-status" th:classappend="${success} ? 'success' : 'failed'">
+        <div class="status-icon" th:text="${success} ? '✓' : '!'">✓</div>
+        <h1 th:text="${success} ? 'Thanh Toán Thành Công!' : 'Thanh Toán Chưa Hoàn Tất'">Thanh Toán Thành Công</h1>
+        <p th:text="${message}">Chi tiết giao dịch thanh toán trực tuyến qua cổng VNPay.</p>
+    </div>
+
+    <div class="payment-body">
+        <div class="amount-box" th:if="${amount != null}">
+            <div class="amount-label">Số tiền thanh toán</div>
+            <div class="amount-value" th:text="${#numbers.formatDecimal(amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">300.000 VNĐ</div>
+        </div>
+
+        <ul class="details-list">
+            <li class="details-item" th:if="${bookingCode != null}">
+                <span class="details-label">Mã đặt lịch:</span>
+                <span class="details-value badge-code" th:text="${bookingCode}">MC-123456</span>
+            </li>
+            <li class="details-item" th:if="${transactionNo != null and !transactionNo.isBlank()}">
+                <span class="details-label">Mã giao dịch VNPay:</span>
+                <span class="details-value" th:text="${transactionNo}">14567890</span>
+            </li>
+            <li class="details-item" th:if="${bankCode != null and !bankCode.isBlank()}">
+                <span class="details-label">Ngân hàng / Cổng:</span>
+                <span class="details-value" th:text="${bankCode}">NCB / VNPAY</span>
+            </li>
+            <li class="details-item" th:if="${appointment != null and appointment.doctor != null}">
+                <span class="details-label">Bác sĩ khám:</span>
+                <span class="details-value" th:text="${appointment.doctor.name}">BS. Nguyễn Văn A</span>
+            </li>
+            <li class="details-item" th:if="${appointment != null}">
+                <span class="details-label">Thời gian khám:</span>
+                <span class="details-value"
+                      th:text="${appointment.timeSlot != null ? appointment.timeSlot.displayText + ', ' : ''} + ${#temporals.format(appointment.appointmentDate, 'dd/MM/yyyy')}">
+                    08:00, 28/10/2026
+                </span>
+            </li>
+            <li class="details-item">
+                <span class="details-label">Trạng thái lịch khám:</span>
+                <span class="details-value" style="color: #087e8b;"
+                      th:text="${success} ? 'ĐÃ XÁC NHẬN (CONFIRMED)' : 'CHỜ XÁC NHẬN (PENDING)'">
+                    ĐÃ XÁC NHẬN
+                </span>
+            </li>
+        </ul>
+
+        <div style="background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 8px; padding: 16px; margin-bottom: 24px; color: #065f46; font-size: 14px; line-height: 1.5;"
+             th:if="${success}">
+            <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                <span>📧</span> Đã gửi email xác nhận & Mã QR check-in
+            </div>
+            Hệ thống đã gửi thông tin phiếu khám kèm <strong>Mã QR check-in</strong> đến email của bạn. Vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam) để xuất trình khi đến quầy tiếp đón phòng khám.
+        </div>
+
+        <div class="sandbox-tip" th:if="${!success}">
+            <strong>💡 Mẹo kiểm thử trên môi trường Sandbox VNPay:</strong>
+            Chọn thẻ <b>NCB</b> với số thẻ test: <code>9704198526191432198</code>, tên chủ thẻ: <code>NGUYEN VAN A</code>, ngày phát hành: <code>07/15</code>, mã OTP xác thực: <code>123456</code>.
+        </div>
+
+        <div class="action-group">
+            <a th:href="@{/patient/appointments}" class="btn-action btn-primary">Xem Lịch Khám Của Tôi</a>
+            <a th:if="${!success and bookingCode != null}"
+               th:href="@{/payment/pay/{code}(code=${bookingCode})}" class="btn-action btn-retry">
+                Thử Thanh Toán Lại
+            </a>
+            <a th:href="@{/doctors}" class="btn-action btn-secondary">Về Trang Chủ</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
+</body>
+</html>

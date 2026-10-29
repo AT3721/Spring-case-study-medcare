@@ -3,23 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>Thông Tin Bác Sĩ - MedCare</title>
+    <th:block th:replace="~{fragments/site-layout :: styles}"></th:block>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; padding: 30px; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; padding: 0; color: #333; line-height: 1.65; }
         .card { max-width: 700px; margin: 30px auto; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.1); }
         h1 { color: #0056b3; }
         .specialty { color: #0d47a1; font-weight: bold; }
+        .doctor-image { display: block; width: 220px; height: 220px; margin: 0 auto 20px; padding: 4px; border-radius: 18px; background: #f2f6f8; object-fit: contain; }
+        .avatar { display: grid; width: 180px; height: 180px; margin: 0 auto 20px; place-items: center; border-radius: 18px; background: #eaf7f7; color: #06636e; font-size: 64px; font-weight: 800; }
+        .bio { color: #4b5b68; }
         .button { display: inline-block; margin: 12px 8px 0 0; padding: 10px 16px; border-radius: 5px; background: #0056b3; color: white; text-decoration: none; font-weight: bold; }
+        @media (max-width: 600px) { body { padding: 12px; } .card { margin: 12px auto; padding: 22px; } }
     </style>
 </head>
 <body>
+<header th:replace="~{fragments/site-layout :: header}"></header>
 <main class="card">
     <p class="specialty" th:text="${doctor.specialty.name}">Chuyên khoa</p>
+    <img class="doctor-image" th:if="${doctor.imageUrl != null and !doctor.imageUrl.isBlank()}"
+         th:src="${doctor.imageUrl}" th:alt="${'Ảnh ' + doctor.name}">
+    <div class="avatar" th:if="${doctor.imageUrl == null or doctor.imageUrl.isBlank()}" aria-hidden="true"
+         th:text="${#strings.isEmpty(doctor.name) ? 'B' : #strings.substring(doctor.name, 0, 1)}">B</div>
     <h1 th:text="${doctor.name}">Tên bác sĩ</h1>
     <p th:text="${doctor.degree}">Học vị</p>
     <p><strong>Phí khám: </strong><span th:text="${#numbers.formatDecimal(doctor.consultationFee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">300.000 VNĐ</span></p>
-    <p th:text="${doctor.bio}">Thông tin bác sĩ</p>
+    <p class="bio" th:text="${doctor.bio != null and !doctor.bio.isBlank() ? doctor.bio : 'Thông tin giới thiệu sẽ được cập nhật.'}">Thông tin bác sĩ</p>
     <a class="button" th:href="@{/appointments/book(doctorId=${doctor.id})}">Đặt lịch khám</a>
     <a class="button" th:href="@{/doctors}">Danh sách bác sĩ</a>
 </main>
+<footer th:replace="~{fragments/site-layout :: footer}"></footer>
 </body>
 </html>
