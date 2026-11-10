@@ -137,15 +137,16 @@ public class DataInitializer {
     }
 
     private void hideExtraSampleDoctors(JdbcTemplate jdbcTemplate) {
-        String migrationKey = "hide-extra-sample-doctors-v1";
-        Integer applied = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM application_migrations WHERE migration_key = ?",
-                Integer.class, migrationKey);
-        if (applied != null && applied > 0) {
-            return;
-        }
+       try {
+           String migrationKey = "hide-extra-sample-doctors-v1";
+           Integer applied = jdbcTemplate.queryForObject(
+                   "SELECT COUNT(*) FROM application_migrations WHERE migration_key = ?",
+                   Integer.class, migrationKey);
+           if (applied != null && applied > 0) {
+               return;
+           }
 
-        jdbcTemplate.update("""
+           jdbcTemplate.update("""
                 UPDATE doctors SET active = 0
                 WHERE (id = 6 AND name = 'ThS. BS Trần Ngọc Lan')
                    OR (id = 7 AND name = 'BS. Lê Hoàng Phúc')
@@ -156,7 +157,7 @@ public class DataInitializer {
                    OR (id = 15 AND name = 'ThS. BS Lương Mai Phương')
                    OR (id = 16 AND name = 'BS. Nguyễn Thành Đạt')
                 """);
-        jdbcTemplate.update("""
+           jdbcTemplate.update("""
                 UPDATE users SET enabled = 0
                 WHERE doctor_id IN (
                     SELECT id FROM doctors
@@ -170,9 +171,11 @@ public class DataInitializer {
                        OR (id = 16 AND name = 'BS. Nguyễn Thành Đạt')
                 )
                 """);
-        jdbcTemplate.update(
-                "INSERT INTO application_migrations (migration_key) VALUES (?)",
-                migrationKey);
+           jdbcTemplate.update(
+                   "INSERT INTO application_migrations (migration_key) VALUES (?)",
+                   migrationKey);
+       } catch (Exception e) {
+           System.out.println("Bỏ qua lỗi DataInitializer: " + e.getMessage());       }
     }
 
     @Bean
