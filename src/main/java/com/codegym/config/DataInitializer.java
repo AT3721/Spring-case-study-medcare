@@ -30,35 +30,38 @@ import java.util.TreeMap;
 @Configuration
 public class DataInitializer {
 
+
+
     @Bean
     @Order(-1)
     CommandLineRunner migrateManagementColumns(JdbcTemplate jdbcTemplate) {
-        return args -> {
-            addColumnIfMissing(jdbcTemplate, "doctors", "active",
-                    "ALTER TABLE doctors ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
-            addColumnIfMissing(jdbcTemplate, "doctors", "image_url",
-                    "ALTER TABLE doctors ADD COLUMN image_url VARCHAR(500) NULL");
-            addColumnIfMissing(jdbcTemplate, "specialties", "active",
-                    "ALTER TABLE specialties ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
-            addColumnIfMissing(jdbcTemplate, "users", "doctor_id",
-                    "ALTER TABLE users ADD COLUMN doctor_id BIGINT NULL UNIQUE");
-            addColumnIfMissing(jdbcTemplate, "users", "email",
-                    "ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL");
-            addColumnIfMissing(jdbcTemplate, "appointments", "patient_user_id",
-                    "ALTER TABLE appointments ADD COLUMN patient_user_id BIGINT NULL");
-            addColumnIfMissing(jdbcTemplate, "appointments", "clinical_result",
-                    "ALTER TABLE appointments ADD COLUMN clinical_result TEXT NULL");
-            addColumnIfMissing(jdbcTemplate, "appointments", "payment_method",
-                    "ALTER TABLE appointments ADD COLUMN payment_method VARCHAR(20) DEFAULT 'CASH'");
-            addColumnIfMissing(jdbcTemplate, "appointments", "payment_status",
-                    "ALTER TABLE appointments ADD COLUMN payment_status VARCHAR(20) DEFAULT 'UNPAID'");
-            addColumnIfMissing(jdbcTemplate, "appointments", "payment_amount",
-                    "ALTER TABLE appointments ADD COLUMN payment_amount DECIMAL(10,2) DEFAULT 0.00");
-            addColumnIfMissing(jdbcTemplate, "appointments", "payment_transaction_no",
-                    "ALTER TABLE appointments ADD COLUMN payment_transaction_no VARCHAR(50) NULL");
-            addColumnIfMissing(jdbcTemplate, "appointments", "payment_time",
-                    "ALTER TABLE appointments ADD COLUMN payment_time DATETIME NULL");
-            jdbcTemplate.execute("""
+       try {
+           return args -> {
+               addColumnIfMissing(jdbcTemplate, "doctors", "active",
+                       "ALTER TABLE doctors ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
+               addColumnIfMissing(jdbcTemplate, "doctors", "image_url",
+                       "ALTER TABLE doctors ADD COLUMN image_url VARCHAR(500) NULL");
+               addColumnIfMissing(jdbcTemplate, "specialties", "active",
+                       "ALTER TABLE specialties ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
+               addColumnIfMissing(jdbcTemplate, "users", "doctor_id",
+                       "ALTER TABLE users ADD COLUMN doctor_id BIGINT NULL UNIQUE");
+               addColumnIfMissing(jdbcTemplate, "users", "email",
+                       "ALTER TABLE users ADD COLUMN email VARCHAR(100) NULL");
+               addColumnIfMissing(jdbcTemplate, "appointments", "patient_user_id",
+                       "ALTER TABLE appointments ADD COLUMN patient_user_id BIGINT NULL");
+               addColumnIfMissing(jdbcTemplate, "appointments", "clinical_result",
+                       "ALTER TABLE appointments ADD COLUMN clinical_result TEXT NULL");
+               addColumnIfMissing(jdbcTemplate, "appointments", "payment_method",
+                       "ALTER TABLE appointments ADD COLUMN payment_method VARCHAR(20) DEFAULT 'CASH'");
+               addColumnIfMissing(jdbcTemplate, "appointments", "payment_status",
+                       "ALTER TABLE appointments ADD COLUMN payment_status VARCHAR(20) DEFAULT 'UNPAID'");
+               addColumnIfMissing(jdbcTemplate, "appointments", "payment_amount",
+                       "ALTER TABLE appointments ADD COLUMN payment_amount DECIMAL(10,2) DEFAULT 0.00");
+               addColumnIfMissing(jdbcTemplate, "appointments", "payment_transaction_no",
+                       "ALTER TABLE appointments ADD COLUMN payment_transaction_no VARCHAR(50) NULL");
+               addColumnIfMissing(jdbcTemplate, "appointments", "payment_time",
+                       "ALTER TABLE appointments ADD COLUMN payment_time DATETIME NULL");
+               jdbcTemplate.execute("""
                     CREATE TABLE IF NOT EXISTS payment_transactions (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         appointment_id BIGINT NOT NULL,
@@ -75,13 +78,13 @@ public class DataInitializer {
                         CONSTRAINT fk_payment_appointment FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                     """);
-            jdbcTemplate.update("""
+               jdbcTemplate.update("""
                     UPDATE appointments a
                     JOIN doctors d ON a.doctor_id = d.id
                     SET a.payment_amount = d.consultation_fee
                     WHERE a.payment_amount IS NULL OR a.payment_amount = 0.00
                     """);
-            jdbcTemplate.execute("""
+               jdbcTemplate.execute("""
                     CREATE TABLE IF NOT EXISTS password_reset_tokens (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         token VARCHAR(100) NOT NULL UNIQUE,
@@ -92,61 +95,63 @@ public class DataInitializer {
                         CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                     """);
-            addColumnIfMissing(jdbcTemplate, "time_slots", "active",
-                    "ALTER TABLE time_slots ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
-            Integer emailConstraintCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM information_schema.table_constraints " +
-                            "WHERE constraint_schema = DATABASE() " +
-                            "AND table_name = 'users' AND constraint_name = 'uq_user_email'",
-                    Integer.class);
-            if (emailConstraintCount != null && emailConstraintCount == 0) {
-                jdbcTemplate.execute("ALTER TABLE users ADD CONSTRAINT uq_user_email UNIQUE (email)");
-            }
-            Integer patientForeignKeyCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM information_schema.table_constraints " +
-                            "WHERE constraint_schema = DATABASE() " +
-                            "AND table_name = 'appointments' AND constraint_name = 'fk_appointment_patient_user'",
-                    Integer.class);
-            if (patientForeignKeyCount != null && patientForeignKeyCount == 0) {
-                jdbcTemplate.execute("ALTER TABLE appointments ADD CONSTRAINT fk_appointment_patient_user " +
-                        "FOREIGN KEY (patient_user_id) REFERENCES users(id) ON DELETE SET NULL");
-            }
-            hideExtraSampleDoctors(jdbcTemplate);
-            Integer doctorForeignKeyCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM information_schema.table_constraints " +
-                            "WHERE constraint_schema = DATABASE() " +
-                            "AND table_name = 'users' AND constraint_name = 'fk_user_doctor'",
-                    Integer.class);
-            if (doctorForeignKeyCount != null && doctorForeignKeyCount == 0) {
-                jdbcTemplate.execute("ALTER TABLE users ADD CONSTRAINT fk_user_doctor " +
-                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE SET NULL");
-            }
-            jdbcTemplate.execute("INSERT INTO roles (name) VALUES ('ROLE_STAFF') " +
-                    "ON DUPLICATE KEY UPDATE name = VALUES(name)");
-            jdbcTemplate.execute("INSERT INTO roles (name) VALUES ('ROLE_DOCTOR') " +
-                    "ON DUPLICATE KEY UPDATE name = VALUES(name)");
-            // Ensure any user linked to a doctor has ROLE_DOCTOR
-            jdbcTemplate.update(
-                    "INSERT INTO user_roles (user_id, role_id) " +
-                            "SELECT u.id, doc_role.id " +
-                            "FROM users u " +
-                            "JOIN roles doc_role ON doc_role.name = 'ROLE_DOCTOR' " +
-                            "WHERE u.doctor_id IS NOT NULL " +
-                            "ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)");
-        };
+               addColumnIfMissing(jdbcTemplate, "time_slots", "active",
+                       "ALTER TABLE time_slots ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
+               Integer emailConstraintCount = jdbcTemplate.queryForObject(
+                       "SELECT COUNT(*) FROM information_schema.table_constraints " +
+                               "WHERE constraint_schema = DATABASE() " +
+                               "AND table_name = 'users' AND constraint_name = 'uq_user_email'",
+                       Integer.class);
+               if (emailConstraintCount != null && emailConstraintCount == 0) {
+                   jdbcTemplate.execute("ALTER TABLE users ADD CONSTRAINT uq_user_email UNIQUE (email)");
+               }
+               Integer patientForeignKeyCount = jdbcTemplate.queryForObject(
+                       "SELECT COUNT(*) FROM information_schema.table_constraints " +
+                               "WHERE constraint_schema = DATABASE() " +
+                               "AND table_name = 'appointments' AND constraint_name = 'fk_appointment_patient_user'",
+                       Integer.class);
+               if (patientForeignKeyCount != null && patientForeignKeyCount == 0) {
+                   jdbcTemplate.execute("ALTER TABLE appointments ADD CONSTRAINT fk_appointment_patient_user " +
+                           "FOREIGN KEY (patient_user_id) REFERENCES users(id) ON DELETE SET NULL");
+               }
+               hideExtraSampleDoctors(jdbcTemplate);
+               Integer doctorForeignKeyCount = jdbcTemplate.queryForObject(
+                       "SELECT COUNT(*) FROM information_schema.table_constraints " +
+                               "WHERE constraint_schema = DATABASE() " +
+                               "AND table_name = 'users' AND constraint_name = 'fk_user_doctor'",
+                       Integer.class);
+               if (doctorForeignKeyCount != null && doctorForeignKeyCount == 0) {
+                   jdbcTemplate.execute("ALTER TABLE users ADD CONSTRAINT fk_user_doctor " +
+                           "FOREIGN KEY (doctor_id) REFERENCES doctors(id) ON DELETE SET NULL");
+               }
+               jdbcTemplate.execute("INSERT INTO roles (name) VALUES ('ROLE_STAFF') " +
+                       "ON DUPLICATE KEY UPDATE name = VALUES(name)");
+               jdbcTemplate.execute("INSERT INTO roles (name) VALUES ('ROLE_DOCTOR') " +
+                       "ON DUPLICATE KEY UPDATE name = VALUES(name)");
+               // Ensure any user linked to a doctor has ROLE_DOCTOR
+               jdbcTemplate.update(
+                       "INSERT INTO user_roles (user_id, role_id) " +
+                               "SELECT u.id, doc_role.id " +
+                               "FROM users u " +
+                               "JOIN roles doc_role ON doc_role.name = 'ROLE_DOCTOR' " +
+                               "WHERE u.doctor_id IS NOT NULL " +
+                               "ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)");
+           };
+       } catch (Exception e) {
+           throw new RuntimeException(e);
+       }
     }
 
     private void hideExtraSampleDoctors(JdbcTemplate jdbcTemplate) {
-       try {
-           String migrationKey = "hide-extra-sample-doctors-v1";
-           Integer applied = jdbcTemplate.queryForObject(
-                   "SELECT COUNT(*) FROM application_migrations WHERE migration_key = ?",
-                   Integer.class, migrationKey);
-           if (applied != null && applied > 0) {
-               return;
-           }
+        String migrationKey = "hide-extra-sample-doctors-v1";
+        Integer applied = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM application_migrations WHERE migration_key = ?",
+                Integer.class, migrationKey);
+        if (applied != null && applied > 0) {
+            return;
+        }
 
-           jdbcTemplate.update("""
+        jdbcTemplate.update("""
                 UPDATE doctors SET active = 0
                 WHERE (id = 6 AND name = 'ThS. BS Trần Ngọc Lan')
                    OR (id = 7 AND name = 'BS. Lê Hoàng Phúc')
@@ -157,7 +162,7 @@ public class DataInitializer {
                    OR (id = 15 AND name = 'ThS. BS Lương Mai Phương')
                    OR (id = 16 AND name = 'BS. Nguyễn Thành Đạt')
                 """);
-           jdbcTemplate.update("""
+        jdbcTemplate.update("""
                 UPDATE users SET enabled = 0
                 WHERE doctor_id IN (
                     SELECT id FROM doctors
@@ -171,11 +176,9 @@ public class DataInitializer {
                        OR (id = 16 AND name = 'BS. Nguyễn Thành Đạt')
                 )
                 """);
-           jdbcTemplate.update(
-                   "INSERT INTO application_migrations (migration_key) VALUES (?)",
-                   migrationKey);
-       } catch (Exception e) {
-           System.out.println("Bỏ qua lỗi DataInitializer: " + e.getMessage());       }
+        jdbcTemplate.update(
+                "INSERT INTO application_migrations (migration_key) VALUES (?)",
+                migrationKey);
     }
 
     @Bean
