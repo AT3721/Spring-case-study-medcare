@@ -1,25 +1,22 @@
-# --- Stage 1: Build dự án với Gradle ---
+# --- Stage 1: Build với Gradle (Đã giới hạn RAM) ---
 FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
 
-# Copy các file cấu hình để cache dependencies
+# Copy các file cấu hình
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
-
-# Copy mã nguồn và đóng gói file JAR (bỏ qua bước test để deploy nhanh)
 COPY src ./src
-RUN gradle bootJar -x test
 
-# --- Stage 2: Chạy ứng dụng với JRE gọn nhẹ ---
+# Giới hạn RAM tối đa 384MB cho Gradle để tránh sập RAM Render
+RUN gradle bootJar -x test --no-daemon -Dorg.gradle.jvmargs="-Xmx384m"
+
+# --- Stage 2: Chạy ứng dụng ---
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Copy file JAR đã tạo từ Stage 1
-# Lưu ý: Lấy file executable jar, bỏ qua file -plain.jar
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Khai báo cổng động từ môi trường của Render
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-Xmx384m", "-jar", "app.jar"]
