@@ -1,5 +1,5 @@
 # --- Stage 1: Build dự án ---
-FROM gradle:8.5-jdk17 AS build
+FROM gradle:8.5-jdk21 AS build
 WORKDIR /app
 
 # Copy toàn bộ dự án vào container (đảm bảo không bị thiếu file)
@@ -9,7 +9,7 @@ COPY . .
 RUN gradle bootJar -x test --no-daemon -Dorg.gradle.jvmargs="-Xmx384m"
 
 # --- Stage 2: Chạy ứng dụng ---
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 COPY --from=build /app/build/libs/*.jar app.jar
