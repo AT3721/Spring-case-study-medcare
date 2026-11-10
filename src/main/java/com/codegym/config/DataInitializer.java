@@ -34,6 +34,12 @@ public class DataInitializer {
     @Order(-1)
     CommandLineRunner migrateManagementColumns(JdbcTemplate jdbcTemplate) {
         return args -> {
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS application_migrations (
+                        migration_key VARCHAR(100) PRIMARY KEY,
+                        applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                    """);
             addColumnIfMissing(jdbcTemplate, "doctors", "active",
                     "ALTER TABLE doctors ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1");
             addColumnIfMissing(jdbcTemplate, "doctors", "image_url",
